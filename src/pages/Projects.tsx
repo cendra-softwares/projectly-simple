@@ -3,6 +3,8 @@ import { Plus, Search, Filter } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ProjectsTable } from "@/components/ProjectsTable"
+import { ProjectViewDialog } from "@/components/ProjectViewDialog"
+import { ProjectFormDialog } from "@/components/ProjectFormDialog"
 import { useProjects } from "@/hooks/useProjects"
 import { Project, ProjectStatus } from "@/types/project"
 import { toast } from "@/hooks/use-toast"
@@ -15,24 +17,21 @@ import {
 } from "@/components/ui/select"
 
 const Projects = () => {
-  const { projects, deleteProject } = useProjects()
+  const { projects, deleteProject, addProject, updateProject } = useProjects()
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState<ProjectStatus | "all">("all")
+  
+  // Dialog states
+  const [viewProject, setViewProject] = useState<Project | null>(null)
+  const [editProject, setEditProject] = useState<Project | null>(null)
+  const [showCreateDialog, setShowCreateDialog] = useState(false)
 
   const handleViewProject = (project: Project) => {
-    // TODO: Open project detail modal/view
-    toast({
-      title: "Project Details",
-      description: `Viewing details for ${project.name}`,
-    })
+    setViewProject(project)
   }
 
   const handleEditProject = (project: Project) => {
-    // TODO: Open edit project modal/form
-    toast({
-      title: "Edit Project",
-      description: `Editing ${project.name}`,
-    })
+    setEditProject(project)
   }
 
   const handleDeleteProject = (projectId: string) => {
@@ -48,11 +47,17 @@ const Projects = () => {
   }
 
   const handleNewProject = () => {
-    // TODO: Open new project modal/form
-    toast({
-      title: "New Project",
-      description: "Opening project creation form...",
-    })
+    setShowCreateDialog(true)
+  }
+
+  const handleCreateProject = (projectData: Omit<Project, "id" | "createdAt" | "updatedAt">) => {
+    addProject(projectData)
+  }
+
+  const handleUpdateProject = (projectData: Omit<Project, "id" | "createdAt" | "updatedAt">) => {
+    if (editProject) {
+      updateProject(editProject.id, projectData)
+    }
   }
 
   // Filter projects based on search term and status
@@ -134,6 +139,28 @@ const Projects = () => {
           />
         )}
       </div>
+
+      {/* Dialogs */}
+      <ProjectViewDialog
+        project={viewProject}
+        open={!!viewProject}
+        onOpenChange={(open) => !open && setViewProject(null)}
+      />
+
+      <ProjectFormDialog
+        project={editProject}
+        open={!!editProject}
+        onOpenChange={(open) => !open && setEditProject(null)}
+        onSubmit={handleUpdateProject}
+        mode="edit"
+      />
+
+      <ProjectFormDialog
+        open={showCreateDialog}
+        onOpenChange={setShowCreateDialog}
+        onSubmit={handleCreateProject}
+        mode="create"
+      />
     </div>
   )
 }

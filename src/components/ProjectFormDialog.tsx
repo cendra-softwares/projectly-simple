@@ -115,18 +115,18 @@ export function ProjectFormDialog({
         return;
       }
 
-      if (!formData.contact.email.trim()) {
+      // Phone validation (if provided)
+      if (formData.contact.phone.trim() && !/^\+?[0-9\s-()]{7,20}$/.test(formData.contact.phone.trim())) {
         toast({
           title: "Validation Error",
-          description: "Contact email is required.",
+          description: "Please enter a valid phone number.",
           variant: "destructive",
         });
         return;
       }
 
-      // Email validation
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(formData.contact.email)) {
+      // Email validation (if provided)
+      if (formData.contact.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.contact.email.trim())) {
         toast({
           title: "Validation Error",
           description: "Please enter a valid email address.",
@@ -257,7 +257,7 @@ export function ProjectFormDialog({
               </div>
 
               <div>
-                <Label htmlFor="contact-email">Email *</Label>
+                <Label htmlFor="contact-email">Email</Label>
                 <Input
                   id="contact-email"
                   type="email"
@@ -266,12 +266,11 @@ export function ProjectFormDialog({
                     updateFormData("contact.email", e.target.value)
                   }
                   placeholder="Enter email address"
-                  required
                 />
               </div>
 
               <div>
-                <Label htmlFor="contact-phone">Phone</Label>
+                <Label htmlFor="contact-phone">Phone *</Label>
                 <Input
                   id="contact-phone"
                   value={formData.contact.phone}
@@ -279,6 +278,7 @@ export function ProjectFormDialog({
                     updateFormData("contact.phone", e.target.value)
                   }
                   placeholder="Enter phone number"
+                  required
                 />
               </div>
 

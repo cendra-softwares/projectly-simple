@@ -88,16 +88,6 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {user && !isCollapsed && ( // Only show if user is logged in and sidebar is not collapsed
-          <SidebarGroup className="mt-4">
-            <SidebarGroupContent>
-              <Button className="w-full justify-start gradient-primary text-white hover:opacity-90 transition-opacity">
-                <Plus className="h-4 w-4 mr-2" />
-                New Project
-              </Button>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        )}
       </SidebarContent>
 
       <div className="p-4 border-t mt-auto">

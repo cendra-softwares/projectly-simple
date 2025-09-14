@@ -24,6 +24,7 @@ interface ProjectsTableProps {
   onViewProject: (project: Project) => void
   onEditProject: (project: Project) => void
   onDeleteProject: (projectId: number) => void // Change type to number
+  onCreateProject: () => void // Add new prop
 }
 
 const statusConfig: Record<ProjectStatus, { label: string; className: string }> = {
@@ -32,7 +33,7 @@ const statusConfig: Record<ProjectStatus, { label: string; className: string }> 
   done: { label: "Done", className: "status-done" },
 }
 
-export function ProjectsTable({ projects, onViewProject, onEditProject, onDeleteProject }: ProjectsTableProps) {
+export function ProjectsTable({ projects, onViewProject, onEditProject, onDeleteProject, onCreateProject }: ProjectsTableProps) {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
@@ -62,7 +63,10 @@ export function ProjectsTable({ projects, onViewProject, onEditProject, onDelete
         {projects.length === 0 ? (
           <div className="text-center py-12">
             <div className="text-muted-foreground mb-4">No projects found</div>
-            <Button className="gradient-primary text-white hover:opacity-90 transition-opacity">
+            <Button
+              className="gradient-primary text-white hover:opacity-90 transition-opacity"
+              onClick={onCreateProject} // Trigger the onCreateProject prop
+            >
               Create Your First Project
             </Button>
           </div>

@@ -47,12 +47,6 @@ const AppLayout = () => {
               <SidebarTrigger className="mr-4" />
               <h1 className="text-lg font-semibold">Project Management Dashboard</h1>
             </div>
-            {showAddProjectButton && (
-              <Button onClick={() => setShowCreateDialog(true)} size="sm">
-                <Plus className="h-4 w-4 mr-2" />
-                New Project
-              </Button>
-            )}
           </header>
           <div className="flex-1 p-6">
             <Routes>

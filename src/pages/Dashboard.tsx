@@ -1,58 +1,76 @@
-import { BarChart3, FolderOpen, Clock, CheckCircle } from "lucide-react"
-import { StatCard } from "@/components/StatCard"
-import { ProjectsTable } from "@/components/ProjectsTable"
-import { ProjectStatusChart } from "@/components/ProjectStatusChart"
-import { ProjectProgressOverview } from "@/components/ProjectProgressOverview"
-import { QuickActions } from "@/components/QuickActions"
-import { ProjectFormDialog } from "@/components/ProjectFormDialog"
-import { ProjectViewDialog } from "@/components/ProjectViewDialog"
-import { useProjects } from "@/hooks/useProjects"
-import { Project } from "@/types/project"
-import { useState } from "react"
-import { toast } from "@/hooks/use-toast"
+import { BarChart3, FolderOpen, Clock, CheckCircle } from "lucide-react";
+import { StatCard } from "@/components/StatCard";
+import { ProjectsTable } from "@/components/ProjectsTable";
+import { ProjectStatusChart } from "@/components/ProjectStatusChart";
+import { ProjectProgressOverview } from "@/components/ProjectProgressOverview";
+import { QuickActions } from "@/components/QuickActions";
+import { ProjectFormDialog } from "@/components/ProjectFormDialog";
+import { ProjectViewDialog } from "@/components/ProjectViewDialog";
+import { useProjects } from "@/hooks/useProjects";
+import { Project } from "@/types/project";
+import { useState } from "react";
+import { toast } from "@/hooks/use-toast";
 
 const Dashboard = () => {
-  const { projects, stats, deleteProject, addProject, updateProject } = useProjects()
-  const [selectedProject, setSelectedProject] = useState<Project | null>(null)
-  const [showCreateDialog, setShowCreateDialog] = useState(false)
-  const [showViewDialog, setShowViewDialog] = useState(false)
-  const [showEditDialog, setShowEditDialog] = useState(false) // New state for edit dialog
-  const [projectToEdit, setProjectToEdit] = useState<Project | null>(null) // New state to hold project being edited
+  const { projects, stats, deleteProject, addProject, updateProject } =
+    useProjects();
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showViewDialog, setShowViewDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false); // New state for edit dialog
+  const [projectToEdit, setProjectToEdit] = useState<Project | null>(null); // New state to hold project being edited
 
   const handleViewProject = (project: Project) => {
-    setSelectedProject(project)
-    setShowViewDialog(true)
-  }
+    setSelectedProject(project);
+    setShowViewDialog(true);
+  };
 
   const handleEditProject = (project: Project) => {
-    setProjectToEdit(project)
-    setShowEditDialog(true)
-  }
+    setProjectToEdit(project);
+    setShowEditDialog(true);
+  };
 
-  const handleDeleteProject = (projectId: number) => { // Change projectId type to number
-    const project = projects.find(p => p.id === projectId)
+  const handleDeleteProject = (projectId: number) => {
+    // Change projectId type to number
+    const project = projects.find((p) => p.id === projectId);
     if (project) {
-      deleteProject(projectId)
+      deleteProject(projectId);
       toast({
         title: "Project Deleted",
         description: `${project.name} has been deleted successfully.`,
         variant: "destructive",
-      })
+      });
     }
-  }
+  };
 
-  const handleCreateProject = (projectData: any) => {
-    addProject(projectData)
-    setShowCreateDialog(false)
-    toast({
-      title: "Project Created",
-      description: `${projectData.name} has been created successfully.`,
-    })
-  }
+  const handleCreateProject = async (
+    id: number | null,
+    projectData: Omit<Project, "id" | "createdAt" | "updatedAt" | "user_id">
+  ) => {
+    console.log("handleCreateProject received projectData:", projectData);
+    try {
+      await addProject(projectData);
+      setShowCreateDialog(false);
+      toast({
+        title: "Project Created",
+        description: `${projectData.name} has been created successfully.`,
+      });
+    } catch (error: any) {
+      console.error("Error creating project:", error);
+      toast({
+        title: "Error",
+        description: `Failed to create project: ${error.message}`,
+        variant: "destructive",
+      });
+    }
+  };
 
   const recentProjects = projects
-    .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
-    .slice(0, 5)
+    .sort(
+      (a, b) =>
+        new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+    )
+    .slice(0, 5);
 
   return (
     <div className="space-y-8">
@@ -110,12 +128,13 @@ const Dashboard = () => {
             Last updated: {new Date().toLocaleDateString()}
           </p>
         </div>
-        
+
         <ProjectsTable
           projects={recentProjects}
           onViewProject={handleViewProject}
           onEditProject={handleEditProject}
           onDeleteProject={handleDeleteProject}
+          onCreateProject={() => setShowCreateDialog(true)}
         />
       </div>
 
@@ -130,8 +149,10 @@ const Dashboard = () => {
         project={projectToEdit} // Pass the project to edit
         open={showEditDialog}
         onOpenChange={setShowEditDialog}
-        onSubmit={(id, data) => { // Adjust onSubmit signature
-          if (id && data) { // Ensure id and data are present for update
+        onSubmit={(id, data) => {
+          // Adjust onSubmit signature
+          if (id && data) {
+            // Ensure id and data are present for update
             updateProject(id, data);
             toast({
               title: "Project Updated",
@@ -149,7 +170,7 @@ const Dashboard = () => {
         onOpenChange={setShowViewDialog}
       />
     </div>
-  )
-}
+  );
+};
 
-export default Dashboard
+export default Dashboard;

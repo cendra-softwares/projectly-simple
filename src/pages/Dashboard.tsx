@@ -5,6 +5,7 @@ import { ProjectStatusChart } from "@/components/ProjectStatusChart"
 import { ProjectProgressOverview } from "@/components/ProjectProgressOverview"
 import { QuickActions } from "@/components/QuickActions"
 import { ProjectFormDialog } from "@/components/ProjectFormDialog"
+import { ProjectViewDialog } from "@/components/ProjectViewDialog"
 import { useProjects } from "@/hooks/useProjects"
 import { Project } from "@/types/project"
 import { useState } from "react"
@@ -14,14 +15,11 @@ const Dashboard = () => {
   const { projects, stats, deleteProject, addProject } = useProjects()
   const [selectedProject, setSelectedProject] = useState<Project | null>(null)
   const [showCreateDialog, setShowCreateDialog] = useState(false)
+  const [showViewDialog, setShowViewDialog] = useState(false)
 
   const handleViewProject = (project: Project) => {
     setSelectedProject(project)
-    // TODO: Open project detail modal/view
-    toast({
-      title: "Project Details",
-      description: `Viewing details for ${project.name}`,
-    })
+    setShowViewDialog(true)
   }
 
   const handleEditProject = (project: Project) => {
@@ -127,6 +125,12 @@ const Dashboard = () => {
         onOpenChange={setShowCreateDialog}
         onSubmit={handleCreateProject}
         mode="create"
+      />
+
+      <ProjectViewDialog
+        project={selectedProject}
+        open={showViewDialog}
+        onOpenChange={setShowViewDialog}
       />
     </div>
   )

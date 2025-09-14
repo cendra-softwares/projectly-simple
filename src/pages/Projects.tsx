@@ -1,20 +1,15 @@
 import { useState } from "react"
-import { Plus, Search, Filter } from "lucide-react"
+import { Search, Plus, Filter } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ProjectsTable } from "@/components/ProjectsTable"
-import { ProjectViewDialog } from "@/components/ProjectViewDialog"
 import { ProjectFormDialog } from "@/components/ProjectFormDialog"
+import { ProjectViewDialog } from "@/components/ProjectViewDialog"
 import { useProjects } from "@/hooks/useProjects"
 import { Project, ProjectStatus } from "@/types/project"
 import { toast } from "@/hooks/use-toast"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 
 const Projects = () => {
   const { projects, deleteProject, addProject, updateProject } = useProjects()

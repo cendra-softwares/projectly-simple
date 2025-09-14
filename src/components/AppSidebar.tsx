@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { BarChart3, FolderOpen, Home, Plus, Settings } from "lucide-react"
+import { BarChart3, FolderOpen, Home, Plus, Settings, LogOut } from "lucide-react"
 import { NavLink, useLocation } from "react-router-dom"
 import {
   Sidebar,
@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "./ThemeToggle"
+import { useAuth } from "@/hooks/useAuth"
 
 const navigationItems = [
   { title: "Dashboard", url: "/", icon: Home },
@@ -28,6 +29,11 @@ export function AppSidebar() {
   const location = useLocation()
   const currentPath = location.pathname
   const isCollapsed = state === "collapsed"
+  const { signOut, user } = useAuth() // Use useAuth hook
+
+  const handleLogout = async () => {
+    await signOut()
+  }
 
   const isActive = (path: string) => {
     if (path === "/") {
@@ -82,7 +88,7 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {!isCollapsed && (
+        {user && !isCollapsed && ( // Only show if user is logged in and sidebar is not collapsed
           <SidebarGroup className="mt-4">
             <SidebarGroupContent>
               <Button className="w-full justify-start gradient-primary text-white hover:opacity-90 transition-opacity">
@@ -95,7 +101,17 @@ export function AppSidebar() {
       </SidebarContent>
 
       <div className="p-4 border-t mt-auto">
-        <div className="flex items-center justify-between">
+        {user && ( // Only show logout if user is logged in
+          <Button
+            onClick={handleLogout}
+            variant="ghost"
+            className="w-full justify-start text-red-500 hover:bg-red-100 dark:hover:bg-red-900"
+          >
+            <LogOut className="h-4 w-4 mr-3 flex-shrink-0" />
+            {!isCollapsed && <span className="text-sm">Logout</span>}
+          </Button>
+        )}
+        <div className="flex items-center justify-between mt-2">
           {!isCollapsed && <span className="text-xs text-muted-foreground">Theme</span>}
           <ThemeToggle />
         </div>

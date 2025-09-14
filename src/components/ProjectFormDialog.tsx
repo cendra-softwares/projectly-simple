@@ -1,23 +1,44 @@
-import { useState, useEffect } from "react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Separator } from "@/components/ui/separator"
-import { Project, ProjectStatus } from "@/types/project"
-import { toast } from "@/hooks/use-toast"
+import { useState, useEffect } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
+import { Project, ProjectStatus } from "@/types/project";
+import { toast } from "@/hooks/use-toast";
 
 interface ProjectFormDialogProps {
-  project?: Project | null
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  onSubmit: (projectData: Omit<Project, "id" | "createdAt" | "updatedAt">) => void
-  mode: "create" | "edit"
+  project?: Project | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSubmit: (
+    id: number | null,
+    projectData: Omit<Project, "id" | "createdAt" | "updatedAt" | "user_id"> | Partial<Project>
+  ) => void;
+  mode: "create" | "edit";
 }
 
-export function ProjectFormDialog({ project, open, onOpenChange, onSubmit, mode }: ProjectFormDialogProps) {
+export function ProjectFormDialog({
+  project,
+  open,
+  onOpenChange,
+  onSubmit,
+  mode,
+}: ProjectFormDialogProps) {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -33,9 +54,9 @@ export function ProjectFormDialog({ project, open, onOpenChange, onSubmit, mode 
       profits: 0,
     },
     images: [] as string[],
-  })
+  });
 
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Reset form when dialog opens/closes or project changes
   useEffect(() => {
@@ -48,7 +69,7 @@ export function ProjectFormDialog({ project, open, onOpenChange, onSubmit, mode 
           contact: { ...project.contact },
           financials: { ...project.financials },
           images: [...project.images],
-        })
+        });
       } else {
         setFormData({
           name: "",
@@ -65,14 +86,14 @@ export function ProjectFormDialog({ project, open, onOpenChange, onSubmit, mode 
             profits: 0,
           },
           images: [],
-        })
+        });
       }
     }
-  }, [open, project, mode])
+  }, [open, project, mode]);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsSubmitting(true)
+    e.preventDefault();
+    setIsSubmitting(true);
 
     try {
       // Basic validation
@@ -81,8 +102,8 @@ export function ProjectFormDialog({ project, open, onOpenChange, onSubmit, mode 
           title: "Validation Error",
           description: "Project name is required.",
           variant: "destructive",
-        })
-        return
+        });
+        return;
       }
 
       if (!formData.contact.name.trim()) {
@@ -90,8 +111,8 @@ export function ProjectFormDialog({ project, open, onOpenChange, onSubmit, mode 
           title: "Validation Error",
           description: "Contact name is required.",
           variant: "destructive",
-        })
-        return
+        });
+        return;
       }
 
       if (!formData.contact.email.trim()) {
@@ -99,54 +120,69 @@ export function ProjectFormDialog({ project, open, onOpenChange, onSubmit, mode 
           title: "Validation Error",
           description: "Contact email is required.",
           variant: "destructive",
-        })
-        return
+        });
+        return;
       }
 
       // Email validation
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(formData.contact.email)) {
         toast({
           title: "Validation Error",
           description: "Please enter a valid email address.",
           variant: "destructive",
-        })
-        return
+        });
+        return;
       }
 
-      onSubmit(formData)
-      onOpenChange(false)
-      
+      if (mode === "create") {
+        onSubmit(null, formData); // For create, id is null
+      } else if (mode === "edit" && project) {
+        // For edit, ensure only fields that are part of Partial<Project> are passed
+        const updatedData: Partial<Project> = {
+          name: formData.name,
+          description: formData.description,
+          status: formData.status,
+          contact: formData.contact,
+          financials: formData.financials,
+          images: formData.images,
+        };
+        onSubmit(project.id, updatedData); // For edit, pass project ID and updated data
+      }
+      onOpenChange(false);
+
       toast({
         title: mode === "create" ? "Project Created" : "Project Updated",
-        description: `${formData.name} has been ${mode === "create" ? "created" : "updated"} successfully.`,
-      })
+        description: `${formData.name} has been ${
+          mode === "create" ? "created" : "updated"
+        } successfully.`,
+      });
     } catch (error) {
       toast({
         title: "Error",
         description: `Failed to ${mode} project. Please try again.`,
         variant: "destructive",
-      })
+      });
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
-  }
+  };
 
   const updateFormData = (path: string, value: any) => {
-    setFormData(prev => {
-      const keys = path.split('.')
-      const newData = { ...prev }
-      let current: any = newData
-      
+    setFormData((prev) => {
+      const keys = path.split(".");
+      const newData = { ...prev };
+      let current: any = newData;
+
       for (let i = 0; i < keys.length - 1; i++) {
-        current[keys[i]] = { ...current[keys[i]] }
-        current = current[keys[i]]
+        current[keys[i]] = { ...current[keys[i]] };
+        current = current[keys[i]];
       }
-      
-      current[keys[keys.length - 1]] = value
-      return newData
-    })
-  }
+
+      current[keys[keys.length - 1]] = value;
+      return newData;
+    });
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -184,7 +220,10 @@ export function ProjectFormDialog({ project, open, onOpenChange, onSubmit, mode 
 
             <div>
               <Label htmlFor="status">Status</Label>
-              <Select value={formData.status} onValueChange={(value) => updateFormData("status", value)}>
+              <Select
+                value={formData.status}
+                onValueChange={(value) => updateFormData("status", value)}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
@@ -202,14 +241,16 @@ export function ProjectFormDialog({ project, open, onOpenChange, onSubmit, mode 
           {/* Contact Information */}
           <div className="space-y-4">
             <h3 className="font-semibold">Contact Information</h3>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="contact-name">Contact Name *</Label>
                 <Input
                   id="contact-name"
                   value={formData.contact.name}
-                  onChange={(e) => updateFormData("contact.name", e.target.value)}
+                  onChange={(e) =>
+                    updateFormData("contact.name", e.target.value)
+                  }
                   placeholder="Enter contact name"
                   required
                 />
@@ -221,7 +262,9 @@ export function ProjectFormDialog({ project, open, onOpenChange, onSubmit, mode 
                   id="contact-email"
                   type="email"
                   value={formData.contact.email}
-                  onChange={(e) => updateFormData("contact.email", e.target.value)}
+                  onChange={(e) =>
+                    updateFormData("contact.email", e.target.value)
+                  }
                   placeholder="Enter email address"
                   required
                 />
@@ -232,7 +275,9 @@ export function ProjectFormDialog({ project, open, onOpenChange, onSubmit, mode 
                 <Input
                   id="contact-phone"
                   value={formData.contact.phone}
-                  onChange={(e) => updateFormData("contact.phone", e.target.value)}
+                  onChange={(e) =>
+                    updateFormData("contact.phone", e.target.value)
+                  }
                   placeholder="Enter phone number"
                 />
               </div>
@@ -242,7 +287,9 @@ export function ProjectFormDialog({ project, open, onOpenChange, onSubmit, mode 
                 <Input
                   id="contact-address"
                   value={formData.contact.address}
-                  onChange={(e) => updateFormData("contact.address", e.target.value)}
+                  onChange={(e) =>
+                    updateFormData("contact.address", e.target.value)
+                  }
                   placeholder="Enter address"
                 />
               </div>
@@ -254,7 +301,7 @@ export function ProjectFormDialog({ project, open, onOpenChange, onSubmit, mode 
           {/* Financial Information */}
           <div className="space-y-4">
             <h3 className="font-semibold">Financial Information</h3>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="expenses">Expenses ($)</Label>
@@ -264,7 +311,12 @@ export function ProjectFormDialog({ project, open, onOpenChange, onSubmit, mode 
                   min="0"
                   step="0.01"
                   value={formData.financials.expenses}
-                  onChange={(e) => updateFormData("financials.expenses", parseFloat(e.target.value) || 0)}
+                  onChange={(e) =>
+                    updateFormData(
+                      "financials.expenses",
+                      parseFloat(e.target.value) || 0
+                    )
+                  }
                   placeholder="0.00"
                 />
               </div>
@@ -277,7 +329,12 @@ export function ProjectFormDialog({ project, open, onOpenChange, onSubmit, mode 
                   min="0"
                   step="0.01"
                   value={formData.financials.profits}
-                  onChange={(e) => updateFormData("financials.profits", parseFloat(e.target.value) || 0)}
+                  onChange={(e) =>
+                    updateFormData(
+                      "financials.profits",
+                      parseFloat(e.target.value) || 0
+                    )
+                  }
                   placeholder="0.00"
                 />
               </div>
@@ -287,27 +344,46 @@ export function ProjectFormDialog({ project, open, onOpenChange, onSubmit, mode 
             <div className="bg-muted/30 rounded-lg p-4">
               <div className="flex items-center justify-between">
                 <span className="font-medium">Net Profit:</span>
-                <span className={`font-bold text-lg ${
-                  (formData.financials.profits - formData.financials.expenses) >= 0 
-                    ? "text-status-done" 
-                    : "text-destructive"
-                }`}>
-                  ${(formData.financials.profits - formData.financials.expenses).toFixed(2)}
+                <span
+                  className={`font-bold text-lg ${
+                    formData.financials.profits -
+                      formData.financials.expenses >=
+                    0
+                      ? "text-status-done"
+                      : "text-destructive"
+                  }`}
+                >
+                  $
+                  {(
+                    formData.financials.profits - formData.financials.expenses
+                  ).toFixed(2)}
                 </span>
               </div>
             </div>
           </div>
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+            >
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting} className="gradient-primary text-white">
-              {isSubmitting ? "Saving..." : mode === "create" ? "Create Project" : "Update Project"}
+            <Button
+              type="submit"
+              disabled={isSubmitting}
+              className="gradient-primary text-white"
+            >
+              {isSubmitting
+                ? "Saving..."
+                : mode === "create"
+                ? "Create Project"
+                : "Update Project"}
             </Button>
           </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

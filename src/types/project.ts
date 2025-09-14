@@ -13,7 +13,8 @@ export interface ProjectFinancials {
 }
 
 export interface Project {
-  id: string
+  id: number
+  user_id: string
   name: string
   description: string
   status: ProjectStatus

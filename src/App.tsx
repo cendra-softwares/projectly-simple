@@ -15,12 +15,18 @@ import { useState } from "react";
 import Dashboard from "./pages/Dashboard";
 import Projects from "./pages/Projects";
 import NotFound from "./pages/NotFound";
+import Login from "./pages/Login";
+import ProtectedRoute from "./components/ProtectedRoute";
+import { AuthProvider, useAuth } from "./hooks/useAuth";
 
 const queryClient = new QueryClient();
 
-const AppContent = () => {
+const AppLayout = () => {
   const { addProject } = useProjects();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const { user, loading } = useAuth();
+
+  const showAddProjectButton = user && !loading;
 
   const handleCreateProject = (projectData: any) => {
     addProject(projectData);
@@ -41,10 +47,12 @@ const AppContent = () => {
               <SidebarTrigger className="mr-4" />
               <h1 className="text-lg font-semibold">Project Management Dashboard</h1>
             </div>
-            <Button onClick={() => setShowCreateDialog(true)} size="sm">
-              <Plus className="h-4 w-4 mr-2" />
-              New Project
-            </Button>
+            {showAddProjectButton && (
+              <Button onClick={() => setShowCreateDialog(true)} size="sm">
+                <Plus className="h-4 w-4 mr-2" />
+                New Project
+              </Button>
+            )}
           </header>
           <div className="flex-1 p-6">
             <Routes>
@@ -65,6 +73,21 @@ const AppContent = () => {
   );
 };
 
+const AppContent = () => {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return <div>Loading application...</div>; // Or a global spinner
+  }
+
+  return (
+    <Routes>
+      <Route path="/login" element={<Login />} />
+      <Route path="/*" element={<ProtectedRoute><AppLayout /></ProtectedRoute>} />
+    </Routes>
+  );
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider defaultTheme="light">
@@ -72,7 +95,9 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <AppContent />
+          <AuthProvider>
+            <AppContent />
+          </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>
     </ThemeProvider>

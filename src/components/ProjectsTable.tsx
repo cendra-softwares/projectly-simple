@@ -23,7 +23,7 @@ interface ProjectsTableProps {
   projects: Project[]
   onViewProject: (project: Project) => void
   onEditProject: (project: Project) => void
-  onDeleteProject: (projectId: string) => void
+  onDeleteProject: (projectId: number) => void // Change type to number
 }
 
 const statusConfig: Record<ProjectStatus, { label: string; className: string }> = {

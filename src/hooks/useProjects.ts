@@ -1,125 +1,249 @@
-import { useState, useEffect } from "react"
-import { Project, ProjectStats } from "@/types/project"
-
-// Mock data for initial development
-const mockProjects: Project[] = [
-  {
-    id: "1",
-    name: "E-commerce Platform",
-    description: "Building a modern e-commerce platform with React and Node.js",
-    status: "in-work",
-    contact: {
-      name: "John Smith",
-      email: "john@example.com",
-      phone: "+1 (555) 123-4567",
-      address: "123 Main St, New York, NY 10001"
-    },
-    financials: {
-      expenses: 15000,
-      profits: 25000
-    },
-    images: [],
-    createdAt: new Date("2024-01-15"),
-    updatedAt: new Date("2024-02-01")
-  },
-  {
-    id: "2",
-    name: "Mobile App Design",
-    description: "UI/UX design for a productivity mobile application",
-    status: "done",
-    contact: {
-      name: "Sarah Johnson",
-      email: "sarah@designco.com",
-      phone: "+1 (555) 987-6543",
-      address: "456 Oak Ave, San Francisco, CA 94102"
-    },
-    financials: {
-      expenses: 8000,
-      profits: 12000
-    },
-    images: [],
-    createdAt: new Date("2024-01-01"),
-    updatedAt: new Date("2024-01-25")
-  },
-  {
-    id: "3",
-    name: "Corporate Website",
-    description: "Complete website redesign for a financial services company",
-    status: "pending",
-    contact: {
-      name: "Michael Brown",
-      email: "m.brown@financorp.com",
-      phone: "+1 (555) 456-7890",
-      address: "789 Business Blvd, Chicago, IL 60601"
-    },
-    financials: {
-      expenses: 0,
-      profits: 18000
-    },
-    images: [],
-    createdAt: new Date("2024-02-10"),
-    updatedAt: new Date("2024-02-10")
-  },
-  {
-    id: "4",
-    name: "Data Analytics Dashboard",
-    description: "Interactive dashboard for real-time business analytics",
-    status: "in-work",
-    contact: {
-      name: "Emily Davis",
-      email: "emily@techstartup.io",
-      phone: "+1 (555) 321-0987",
-      address: "321 Innovation Dr, Austin, TX 73301"
-    },
-    financials: {
-      expenses: 12000,
-      profits: 22000
-    },
-    images: [],
-    createdAt: new Date("2024-01-20"),
-    updatedAt: new Date("2024-02-05")
-  }
-]
+import { useState, useEffect } from "react";
+import { Project, ProjectStats } from "@/types/project";
+import { supabase } from "@/lib/supabase";
 
 export function useProjects() {
-  const [projects, setProjects] = useState<Project[]>(mockProjects)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchProjects();
+  }, []);
+
+  const fetchProjects = async () => {
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        setProjects([]);
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
+      setError(null);
+      const { data, error } = await supabase
+        .from("projects")
+        .select(
+          `
+          *,
+          contact:project_contacts (name, email, phone, address),
+          financials:project_financials (expenses, profits)
+        `
+        )
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+
+      const mappedProjects: Project[] =
+        data?.map((p) => ({
+          id: p.id,
+          user_id: p.user_id,
+          name: p.name,
+          description: p.description,
+          status: p.status,
+          contact: p.contact,
+          financials: p.financials,
+          images: p.images || [],
+          createdAt: new Date(p.created_at),
+          updatedAt: new Date(p.updated_at),
+        })) || [];
+
+      setProjects(mappedProjects);
+    } catch (err: any) {
+      setError(err.message || "Failed to fetch projects");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const stats: ProjectStats = {
     total: projects.length,
-    pending: projects.filter(p => p.status === "pending").length,
-    inWork: projects.filter(p => p.status === "in-work").length,
-    done: projects.filter(p => p.status === "done").length,
-  }
+    pending: projects.filter((p) => p.status === "pending").length,
+    inWork: projects.filter((p) => p.status === "in-work").length,
+    done: projects.filter((p) => p.status === "done").length,
+  };
 
-  const addProject = (project: Omit<Project, "id" | "createdAt" | "updatedAt">) => {
-    const newProject: Project = {
-      ...project,
-      id: Date.now().toString(),
-      createdAt: new Date(),
-      updatedAt: new Date(),
+  const addProject = async (
+    projectData: Omit<Project, "id" | "createdAt" | "updatedAt" | "user_id">
+  ) => {
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        throw new Error("User not authenticated");
+      }
+
+      setLoading(true);
+      setError(null);
+
+      const { data: project, error: projectError } = await supabase
+        .from("projects")
+        .insert({
+          user_id: user.id,
+          name: projectData.name,
+          description: projectData.description,
+          status: projectData.status,
+          images: projectData.images,
+        })
+        .select()
+        .single();
+
+      if (projectError) throw projectError;
+      if (!project) throw new Error("Failed to create project");
+
+      const projectId = project.id;
+
+      const { error: contactError } = await supabase
+        .from("project_contacts")
+        .insert({
+          project_id: projectId,
+          name: projectData.contact.name,
+          email: projectData.contact.email,
+          phone: projectData.contact.phone,
+          address: projectData.contact.address,
+        });
+
+      if (contactError) throw contactError;
+
+      const { error: financialError } = await supabase
+        .from("project_financials")
+        .insert({
+          project_id: projectId,
+          expenses: projectData.financials.expenses,
+          profits: projectData.financials.profits,
+        });
+
+      if (financialError) throw financialError;
+
+      await fetchProjects();
+      return project;
+    } catch (err: any) {
+      setError(err.message || "Failed to add project");
+      throw err;
+    } finally {
+      setLoading(false);
     }
-    setProjects(prev => [newProject, ...prev])
-  }
+  };
 
-  const updateProject = (id: string, updates: Partial<Project>) => {
-    setProjects(prev =>
-      prev.map(project =>
-        project.id === id
-          ? { ...project, ...updates, updatedAt: new Date() }
-          : project
-      )
-    )
-  }
+  const updateProject = async (id: number, updates: Partial<Project>) => {
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
-  const deleteProject = (id: string) => {
-    setProjects(prev => prev.filter(project => project.id !== id))
-  }
+      if (!user) {
+        throw new Error("User not authenticated");
+      }
 
-  const getProject = (id: string) => {
-    return projects.find(project => project.id === id)
-  }
+      setLoading(true);
+      setError(null);
+
+      const updateData: any = {};
+      if (updates.name !== undefined) updateData.name = updates.name;
+      if (updates.description !== undefined)
+        updateData.description = updates.description;
+      if (updates.status !== undefined) updateData.status = updates.status;
+      if (updates.images !== undefined) updateData.images = updates.images;
+
+      const { error: projectError } = await supabase
+        .from("projects")
+        .update(updateData)
+        .eq("id", id)
+        .eq("user_id", user.id);
+
+      if (projectError) {
+        console.error("Supabase project update error:", projectError);
+        throw projectError;
+      }
+
+      if (updates.contact) {
+        const { error: contactError } = await supabase
+          .from("project_contacts")
+          .upsert(
+            {
+              project_id: id, // Include project_id for upsert to match on
+              name: updates.contact.name,
+              email: updates.contact.email,
+              phone: updates.contact.phone,
+              address: updates.contact.address,
+            },
+            { onConflict: "project_id" }
+          );
+
+        if (contactError) {
+          console.error("Supabase contact update error:", contactError);
+          throw contactError;
+        }
+      }
+
+      if (updates.financials) {
+        const { error: financialError } = await supabase
+          .from("project_financials")
+          .upsert(
+            {
+              project_id: id, // Include project_id for upsert to match on
+              expenses: updates.financials.expenses,
+              profits: updates.financials.profits,
+            },
+            { onConflict: "project_id" }
+          );
+
+        if (financialError) {
+          console.error("Supabase financial update error:", financialError);
+          throw financialError;
+        }
+      }
+
+      await fetchProjects();
+    } catch (err: any) {
+      console.error("Failed to update project - Caught error:", err);
+      setError(err.message || "Failed to update project");
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteProject = async (id: number) => {
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        throw new Error("User not authenticated");
+      }
+
+      setLoading(true);
+      setError(null);
+
+      const { error } = await supabase
+        .from("projects")
+        .delete()
+        .eq("id", id)
+        .eq("user_id", user.id);
+
+      if (error) throw error;
+
+      await fetchProjects();
+    } catch (err: any) {
+      setError(err.message || "Failed to delete project");
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getProject = (id: number): Project | undefined => {
+    return projects.find((p) => p.id === id);
+  };
 
   return {
     projects,
@@ -130,5 +254,6 @@ export function useProjects() {
     updateProject,
     deleteProject,
     getProject,
-  }
+    refetch: fetchProjects,
+  };
 }

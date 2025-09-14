@@ -12,10 +12,12 @@ import { useState } from "react"
 import { toast } from "@/hooks/use-toast"
 
 const Dashboard = () => {
-  const { projects, stats, deleteProject, addProject } = useProjects()
+  const { projects, stats, deleteProject, addProject, updateProject } = useProjects()
   const [selectedProject, setSelectedProject] = useState<Project | null>(null)
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [showViewDialog, setShowViewDialog] = useState(false)
+  const [showEditDialog, setShowEditDialog] = useState(false) // New state for edit dialog
+  const [projectToEdit, setProjectToEdit] = useState<Project | null>(null) // New state to hold project being edited
 
   const handleViewProject = (project: Project) => {
     setSelectedProject(project)
@@ -23,14 +25,11 @@ const Dashboard = () => {
   }
 
   const handleEditProject = (project: Project) => {
-    // TODO: Open edit project modal/form
-    toast({
-      title: "Edit Project",
-      description: `Editing ${project.name}`,
-    })
+    setProjectToEdit(project)
+    setShowEditDialog(true)
   }
 
-  const handleDeleteProject = (projectId: string) => {
+  const handleDeleteProject = (projectId: number) => { // Change projectId type to number
     const project = projects.find(p => p.id === projectId)
     if (project) {
       deleteProject(projectId)
@@ -125,6 +124,23 @@ const Dashboard = () => {
         onOpenChange={setShowCreateDialog}
         onSubmit={handleCreateProject}
         mode="create"
+      />
+
+      <ProjectFormDialog
+        project={projectToEdit} // Pass the project to edit
+        open={showEditDialog}
+        onOpenChange={setShowEditDialog}
+        onSubmit={(id, data) => { // Adjust onSubmit signature
+          if (id && data) { // Ensure id and data are present for update
+            updateProject(id, data);
+            toast({
+              title: "Project Updated",
+              description: `${data.name} has been updated successfully.`,
+            });
+          }
+          setShowEditDialog(false);
+        }}
+        mode="edit"
       />
 
       <ProjectViewDialog

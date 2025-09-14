@@ -51,15 +51,15 @@ export function ProjectStatusChart({ data }: ProjectStatusChartProps) {
         <CardTitle className="text-lg">Project Status Distribution</CardTitle>
       </CardHeader>
       <CardContent>
-        <ChartContainer config={chartConfig} className="h-[200px]">
+        <ChartContainer config={chartConfig} className="h-[200px] flex items-center justify-center">
           <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
+            <PieChart width={200} height={200}>
               <Pie
                 data={chartData}
-                cx="50%"
-                cy="50%"
-                innerRadius={60}
-                outerRadius={80}
+                cx={100}
+                cy={100}
+                innerRadius={50}
+                outerRadius={90}
                 paddingAngle={2}
                 dataKey="value"
               >

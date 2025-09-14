@@ -29,7 +29,7 @@ export function AppSidebar() {
   const location = useLocation()
   const currentPath = location.pathname
   const isCollapsed = state === "collapsed"
-  const { signOut, user } = useAuth() // Use useAuth hook
+  const { signOut, user, loading } = useAuth() // Use useAuth hook and destructure loading
 
   const handleLogout = async () => {
     await signOut()
@@ -96,9 +96,10 @@ export function AppSidebar() {
             onClick={handleLogout}
             variant="ghost"
             className="w-full justify-start text-red-500 hover:bg-red-100 dark:hover:bg-red-900"
+            disabled={loading} // Disable button when loading
           >
             <LogOut className="h-4 w-4 mr-3 flex-shrink-0" />
-            {!isCollapsed && <span className="text-sm">Logout</span>}
+            {!isCollapsed && <span className="text-sm">{loading ? "Logging out..." : "Logout"}</span>}
           </Button>
         )}
         <div className="flex items-center justify-between mt-2">

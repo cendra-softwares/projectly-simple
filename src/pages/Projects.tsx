@@ -86,8 +86,8 @@ const Projects = () => {
       </div>
 
       {/* Filters */}
-      <div className="flex items-center space-x-4 animate-fade-in">
-        <div className="relative flex-1 max-w-md">
+      <div className="flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4 animate-fade-in">
+        <div className="relative flex-1 w-full md:max-w-md">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input
             placeholder="Search projects..."
@@ -98,7 +98,7 @@ const Projects = () => {
         </div>
         
         <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as ProjectStatus | "all")}>
-          <SelectTrigger className="w-48">
+          <SelectTrigger className="w-full md:w-48">
             <Filter className="mr-2 h-4 w-4" />
             <SelectValue placeholder="Filter by status" />
           </SelectTrigger>
@@ -131,6 +131,7 @@ const Projects = () => {
             onViewProject={handleViewProject}
             onEditProject={handleEditProject}
             onDeleteProject={handleDeleteProject}
+            onCreateProject={handleNewProject}
           />
         )}
       </div>

@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Eye, MoreHorizontal, Pencil, Trash2 } from "lucide-react"
+import { Eye, MoreHorizontal, Pencil, Trash2, Plus } from "lucide-react"
 import {
   Table,
   TableBody,
@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Project, ProjectStatus } from "@/types/project"
+import { useIsMobile } from "@/hooks/use-mobile"
 
 interface ProjectsTableProps {
   projects: Project[]
@@ -33,20 +34,122 @@ const statusConfig: Record<ProjectStatus, { label: string; className: string }> 
   done: { label: "Done", className: "status-done" },
 }
 
-export function ProjectsTable({ projects, onViewProject, onEditProject, onDeleteProject, onCreateProject }: ProjectsTableProps) {
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(amount)
-  }
+const formatCurrency = (amount: number) => {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format(amount)
+}
 
-  const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    }).format(date)
+const formatDate = (date: Date) => {
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(date)
+}
+
+const ProjectCard = ({ project, onViewProject, onEditProject, onDeleteProject }: { project: Project } & Omit<ProjectsTableProps, 'projects' | 'onCreateProject'>) => {
+  const profit = project.financials.profits - project.financials.expenses
+
+  return (
+    <Card className="shadow-sm">
+      <CardHeader>
+        <CardTitle className="flex justify-between items-start">
+          <div>
+            <div className="font-medium">{project.name}</div>
+            <Badge className={`${statusConfig[project.status].className} mt-1`}>
+              {statusConfig[project.status].label}
+            </Badge>
+          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                <MoreHorizontal className="h-4 w-4" />
+                <span className="sr-only">Open menu</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => onViewProject(project)}>
+                <Eye className="mr-2 h-4 w-4" />
+                View
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onEditProject(project)}>
+                <Pencil className="mr-2 h-4 w-4" />
+                Edit
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => onDeleteProject(project.id)}
+                className="text-destructive"
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        <p className="text-sm text-muted-foreground line-clamp-2">{project.description}</p>
+        <div>
+          <div className="font-medium text-sm">{project.contact.name}</div>
+          <div className="text-xs text-muted-foreground">{project.contact.email}</div>
+        </div>
+        <div>
+          <div className={`font-medium text-sm ${profit >= 0 ? "text-status-done" : "text-destructive"}`}>
+            {formatCurrency(profit)}
+          </div>
+          <div className="text-xs text-muted-foreground">
+            Rev: {formatCurrency(project.financials.profits)}
+          </div>
+        </div>
+        <div className="text-xs text-muted-foreground pt-2">
+          Created: {formatDate(project.createdAt)}
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+export function ProjectsTable({ projects, onViewProject, onEditProject, onDeleteProject, onCreateProject }: ProjectsTableProps) {
+  const isMobile = useIsMobile()
+
+  if (isMobile) {
+    return (
+      <div className="space-y-4">
+        {projects.length === 0 ? (
+          <div className="text-center py-12">
+            <div className="text-muted-foreground mb-4">No projects found</div>
+            <Button
+              className="gradient-primary text-white hover:opacity-90 transition-opacity"
+              onClick={onCreateProject}
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Create Your First Project
+            </Button>
+          </div>
+        ) : (
+          <>
+            <Button
+              className="gradient-primary text-white hover:opacity-90 transition-opacity w-full"
+              onClick={onCreateProject}
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Create Project
+            </Button>
+            {projects.map((project) => (
+              <ProjectCard
+                key={project.id}
+                project={project}
+                onViewProject={onViewProject}
+                onEditProject={onEditProject}
+                onDeleteProject={onDeleteProject}
+              />
+            ))}
+          </>
+        )}
+      </div>
+    )
   }
 
   return (

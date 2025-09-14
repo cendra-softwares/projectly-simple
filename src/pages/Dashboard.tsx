@@ -1,14 +1,19 @@
 import { BarChart3, FolderOpen, Clock, CheckCircle } from "lucide-react"
 import { StatCard } from "@/components/StatCard"
 import { ProjectsTable } from "@/components/ProjectsTable"
+import { ProjectStatusChart } from "@/components/ProjectStatusChart"
+import { ProjectProgressOverview } from "@/components/ProjectProgressOverview"
+import { QuickActions } from "@/components/QuickActions"
+import { ProjectFormDialog } from "@/components/ProjectFormDialog"
 import { useProjects } from "@/hooks/useProjects"
 import { Project } from "@/types/project"
 import { useState } from "react"
 import { toast } from "@/hooks/use-toast"
 
 const Dashboard = () => {
-  const { projects, stats, deleteProject } = useProjects()
+  const { projects, stats, deleteProject, addProject } = useProjects()
   const [selectedProject, setSelectedProject] = useState<Project | null>(null)
+  const [showCreateDialog, setShowCreateDialog] = useState(false)
 
   const handleViewProject = (project: Project) => {
     setSelectedProject(project)
@@ -37,6 +42,15 @@ const Dashboard = () => {
         variant: "destructive",
       })
     }
+  }
+
+  const handleCreateProject = (projectData: any) => {
+    addProject(projectData)
+    setShowCreateDialog(false)
+    toast({
+      title: "Project Created",
+      description: `${projectData.name} has been created successfully.`,
+    })
   }
 
   const recentProjects = projects
@@ -84,6 +98,13 @@ const Dashboard = () => {
         />
       </div>
 
+      {/* Charts and Analytics */}
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <ProjectStatusChart data={stats} />
+        <ProjectProgressOverview stats={stats} />
+        <QuickActions onCreateProject={() => setShowCreateDialog(true)} />
+      </div>
+
       {/* Recent Projects Table */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
@@ -100,6 +121,13 @@ const Dashboard = () => {
           onDeleteProject={handleDeleteProject}
         />
       </div>
+
+      <ProjectFormDialog
+        open={showCreateDialog}
+        onOpenChange={setShowCreateDialog}
+        onSubmit={handleCreateProject}
+        mode="create"
+      />
     </div>
   )
 }

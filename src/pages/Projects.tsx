@@ -1,70 +1,116 @@
-import { useState } from "react"
-import { Search, Plus, Filter } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ProjectsTable } from "@/components/ProjectsTable"
-import { ProjectFormDialog } from "@/components/ProjectFormDialog"
-import { ProjectViewDialog } from "@/components/ProjectViewDialog"
-import { useProjects } from "@/hooks/useProjects"
-import { Project, ProjectStatus } from "@/types/project"
-import { toast } from "@/hooks/use-toast"
+import { useState } from "react";
+import { Search, Plus, Filter } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { ProjectsTable } from "@/components/ProjectsTable";
+import { ProjectFormDialog } from "@/components/ProjectFormDialog";
+import { ProjectViewDialog } from "@/components/ProjectViewDialog";
+import { useProjects } from "@/hooks/useProjects";
+import { Project, ProjectStatus } from "@/types/project";
+import { toast } from "@/hooks/use-toast";
 
 const Projects = () => {
-  const { projects, deleteProject, addProject, updateProject } = useProjects()
-  const [searchTerm, setSearchTerm] = useState("")
-  const [statusFilter, setStatusFilter] = useState<ProjectStatus | "all">("all")
-  
+  const { projects, deleteProject, addProject, updateProject } = useProjects();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<ProjectStatus | "all">(
+    "all"
+  );
+
   // Dialog states
-  const [viewProject, setViewProject] = useState<Project | null>(null)
-  const [editProject, setEditProject] = useState<Project | null>(null)
-  const [showCreateDialog, setShowCreateDialog] = useState(false)
+  const [viewProject, setViewProject] = useState<Project | null>(null);
+  const [editProject, setEditProject] = useState<Project | null>(null);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
 
   const handleViewProject = (project: Project) => {
-    setViewProject(project)
-  }
+    setViewProject(project);
+  };
 
   const handleEditProject = (project: Project) => {
-    setEditProject(project)
-  }
+    setEditProject(project);
+  };
 
-  const handleDeleteProject = (projectId: string) => {
-    const project = projects.find(p => p.id === projectId)
+  const handleDeleteProject = (projectId: number) => {
+    const project = projects.find((p) => p.id === projectId);
     if (project) {
-      deleteProject(projectId)
+      deleteProject(projectId);
       toast({
         title: "Project Deleted",
         description: `${project.name} has been deleted successfully.`,
         variant: "destructive",
-      })
+      });
     }
-  }
+  };
 
   const handleNewProject = () => {
-    setShowCreateDialog(true)
-  }
+    setShowCreateDialog(true);
+  };
 
-  const handleCreateProject = (projectData: Omit<Project, "id" | "createdAt" | "updatedAt">) => {
-    addProject(projectData)
-  }
-
-  const handleUpdateProject = (projectData: Omit<Project, "id" | "createdAt" | "updatedAt">) => {
-    if (editProject) {
-      updateProject(editProject.id, projectData)
+  const handleCreateProject = async (
+    id: number | null,
+    projectData: Omit<Project, "id" | "createdAt" | "updatedAt" | "user_id">
+  ) => {
+    try {
+      await addProject(projectData);
+      setShowCreateDialog(false);
+      toast({
+        title: "Project Created",
+        description: `${projectData.name} has been created successfully.`,
+      });
+    } catch (error: any) {
+      console.error("Error creating project:", error);
+      toast({
+        title: "Error",
+        description: `Failed to create project: ${error.message}`,
+        variant: "destructive",
+      });
     }
-  }
+  };
+
+  const handleUpdateProject = async (
+    id: number | null,
+    projectData: Partial<
+      Omit<Project, "id" | "createdAt" | "updatedAt" | "user_id">
+    >
+  ) => {
+    if (editProject && id) {
+      try {
+        await updateProject(id, projectData);
+        setEditProject(null); // Close edit dialog
+        toast({
+          title: "Project Updated",
+          description: `${projectData.name} has been updated successfully.`,
+        });
+      } catch (error: any) {
+        console.error("Error updating project:", error);
+        toast({
+          title: "Error",
+          description: `Failed to update project: ${error.message}`,
+          variant: "destructive",
+        });
+      }
+    }
+  };
 
   // Filter projects based on search term and status
-  const filteredProjects = projects.filter(project => {
-    const matchesSearch = project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         project.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         project.contact.name.toLowerCase().includes(searchTerm.toLowerCase())
-    
-    const matchesStatus = statusFilter === "all" || project.status === statusFilter
-    
-    return matchesSearch && matchesStatus
-  })
+  const filteredProjects = projects.filter((project) => {
+    const matchesSearch =
+      project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      project.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      project.contact.name.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesStatus =
+      statusFilter === "all" || project.status === statusFilter;
+
+    return matchesSearch && matchesStatus;
+  });
 
   return (
     <div className="space-y-6">
@@ -76,7 +122,7 @@ const Projects = () => {
             Manage and track all your projects in one place.
           </p>
         </div>
-        <Button 
+        <Button
           onClick={handleNewProject}
           className="gradient-primary text-white hover:opacity-90 transition-opacity"
         >
@@ -96,8 +142,13 @@ const Projects = () => {
             className="pl-10"
           />
         </div>
-        
-        <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as ProjectStatus | "all")}>
+
+        <Select
+          value={statusFilter}
+          onValueChange={(value) =>
+            setStatusFilter(value as ProjectStatus | "all")
+          }
+        >
           <SelectTrigger className="w-48">
             <Filter className="mr-2 h-4 w-4" />
             <SelectValue placeholder="Filter by status" />
@@ -118,10 +169,7 @@ const Projects = () => {
             <div className="text-muted-foreground mb-4">
               No projects found matching "{searchTerm}"
             </div>
-            <Button 
-              onClick={() => setSearchTerm("")}
-              variant="outline"
-            >
+            <Button onClick={() => setSearchTerm("")} variant="outline">
               Clear Search
             </Button>
           </div>
@@ -131,6 +179,7 @@ const Projects = () => {
             onViewProject={handleViewProject}
             onEditProject={handleEditProject}
             onDeleteProject={handleDeleteProject}
+            onCreateProject={handleNewProject}
           />
         )}
       </div>
@@ -146,7 +195,11 @@ const Projects = () => {
         project={editProject}
         open={!!editProject}
         onOpenChange={(open) => !open && setEditProject(null)}
-        onSubmit={handleUpdateProject}
+        onSubmit={(id, data) => {
+          if (id && data) {
+            handleUpdateProject(id, data);
+          }
+        }}
         mode="edit"
       />
 
@@ -157,7 +210,7 @@ const Projects = () => {
         mode="create"
       />
     </div>
-  )
-}
+  );
+};
 
-export default Projects
+export default Projects;

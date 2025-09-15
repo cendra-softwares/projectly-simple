@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { BarChart3, FolderOpen, Home, Plus, Settings, LogOut } from "lucide-react"
+import { BarChart3, FolderOpen, Home, Plus, Settings, LogOut, PieChart } from "lucide-react"
 import { NavLink, useLocation } from "react-router-dom"
 import {
   Sidebar,
@@ -21,6 +21,7 @@ const navigationItems = [
   { title: "Dashboard", url: "/", icon: Home },
   { title: "Projects", url: "/projects", icon: FolderOpen },
   { title: "Analytics", url: "/analytics", icon: BarChart3 },
+  { title: "Reports", url: "/reports", icon: PieChart },
   { title: "Settings", url: "/settings", icon: Settings },
 ]
 

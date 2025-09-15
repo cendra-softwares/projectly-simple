@@ -4,12 +4,76 @@ import { supabase } from "@/lib/supabase";
 
 export function useProjects() {
   const [projects, setProjects] = useState<Project[]>([]);
+  const [projectHistory, setProjectHistory] = useState<any[]>([]); // New state for historical data
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchProjects();
+    fetchProjectHistory(); // Fetch historical data on mount
   }, []);
+
+  const fetchProjectHistory = async () => {
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        setProjectHistory([]);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from("project_status_history")
+        .select("status, timestamp")
+        .eq("user_id", user.id) // Assuming user_id is linked
+        .order("timestamp", { ascending: true });
+
+      if (error) throw error;
+
+      // Process raw history data into chart-friendly format (e.g., monthly counts)
+      const processedHistory = processHistoricalData(data);
+      setProjectHistory(processedHistory);
+    } catch (err: any) {
+      console.error("Failed to fetch project history:", err);
+    }
+  };
+
+  const processHistoricalData = (rawData: any[]) => {
+    const monthlyData: { [key: string]: { completed: number; inProgress: number; pending: number } } = {};
+
+    rawData.forEach((entry) => {
+      const date = new Date(entry.timestamp);
+      const monthYear = `${date.toLocaleString('default', { month: 'short' })}-${date.getFullYear()}`;
+
+      if (!monthlyData[monthYear]) {
+        monthlyData[monthYear] = { completed: 0, inProgress: 0, pending: 0 };
+      }
+
+      if (entry.status === "done") {
+        monthlyData[monthYear].completed++;
+      } else if (entry.status === "in-work") {
+        monthlyData[monthYear].inProgress++;
+      } else if (entry.status === "pending") {
+        monthlyData[monthYear].pending++;
+      }
+    });
+
+    // Convert to array and sort by date
+    const sortedMonths = Object.keys(monthlyData).sort((a, b) => {
+      const [monthA, yearA] = a.split('-');
+      const [monthB, yearB] = b.split('-');
+      const dateA = new Date(`${monthA} 1, ${yearA}`);
+      const dateB = new Date(`${monthB} 1, ${yearB}`);
+      return dateA.getTime() - dateB.getTime();
+    });
+
+    return sortedMonths.map(month => ({
+      name: month,
+      ...monthlyData[month],
+    }));
+  };
 
   const fetchProjects = async () => {
     try {
@@ -100,6 +164,16 @@ export function useProjects() {
 
       const projectId = project.id;
 
+      // Record initial status in history
+      const { error: statusHistoryError } = await supabase
+        .from("project_status_history")
+        .insert({
+          project_id: projectId,
+          status: projectData.status,
+          user_id: user.id, // Add user_id
+        });
+      if (statusHistoryError) throw statusHistoryError;
+
       const { error: contactError } = await supabase
         .from("project_contacts")
         .insert({
@@ -149,8 +223,29 @@ export function useProjects() {
       if (updates.name !== undefined) updateData.name = updates.name;
       if (updates.description !== undefined)
         updateData.description = updates.description;
-      if (updates.status !== undefined) updateData.status = updates.status;
       if (updates.images !== undefined) updateData.images = updates.images;
+
+      // Fetch current status to compare
+      const { data: currentProject, error: fetchError } = await supabase
+        .from("projects")
+        .select("status")
+        .eq("id", id)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      if (updates.status !== undefined && currentProject.status !== updates.status) {
+        updateData.status = updates.status;
+        // Record status change in history
+        const { error: statusHistoryError } = await supabase
+          .from("project_status_history")
+          .insert({
+            project_id: id,
+            status: updates.status,
+            user_id: user.id, // Add user_id
+          });
+        if (statusHistoryError) throw statusHistoryError;
+      }
 
       const { error: projectError } = await supabase
         .from("projects")
@@ -248,6 +343,7 @@ export function useProjects() {
   return {
     projects,
     stats,
+    projectHistory, // Expose historical data
     loading,
     error,
     addProject,

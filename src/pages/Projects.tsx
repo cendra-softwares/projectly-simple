@@ -24,6 +24,22 @@ const Projects = () => {
     "all"
   );
 
+  const handleStatusChange = async (projectId: number, newStatus: ProjectStatus) => {
+    try {
+      await updateProject(projectId, { status: newStatus });
+      toast({
+        title: "Project Status Updated",
+        description: `Project status has been updated to ${newStatus}.`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: `Failed to update project status: ${error.message}`,
+        variant: "destructive",
+      });
+    }
+  };
+
   // Dialog states
   const [viewProject, setViewProject] = useState<Project | null>(null);
   const [editProject, setEditProject] = useState<Project | null>(null);
@@ -180,6 +196,7 @@ const Projects = () => {
             onEditProject={handleEditProject}
             onDeleteProject={handleDeleteProject}
             onCreateProject={handleNewProject}
+            onStatusChange={handleStatusChange} // Pass the new handler
           />
         )}
       </div>

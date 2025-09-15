@@ -17,8 +17,16 @@ import {
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Project, ProjectStatus } from "@/types/project"
 import { formatCurrency } from "@/lib/utils" // Import the utility function
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog" // Import ConfirmDialog
 
 interface ProjectsTableProps {
   projects: Project[]
@@ -26,6 +34,7 @@ interface ProjectsTableProps {
   onEditProject: (project: Project) => void
   onDeleteProject: (projectId: number) => void // Change type to number
   onCreateProject: () => void // Add new prop
+  onStatusChange: (projectId: number, newStatus: ProjectStatus) => void // New prop for status change
 }
 
 const statusConfig: Record<ProjectStatus, { label: string; className: string }> = {
@@ -34,7 +43,10 @@ const statusConfig: Record<ProjectStatus, { label: string; className: string }> 
   done: { label: "Done", className: "status-done" },
 }
 
-export function ProjectsTable({ projects, onViewProject, onEditProject, onDeleteProject, onCreateProject }: ProjectsTableProps) {
+export function ProjectsTable({ projects, onViewProject, onEditProject, onDeleteProject, onCreateProject, onStatusChange }: ProjectsTableProps) {
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false)
+  const [projectToUpdate, setProjectToUpdate] = useState<{ id: number; newStatus: ProjectStatus } | null>(null)
+
   const formatDate = (date: Date) => {
     return new Intl.DateTimeFormat("en-US", {
       month: "short",
@@ -72,6 +84,7 @@ export function ProjectsTable({ projects, onViewProject, onEditProject, onDelete
                   <TableHead>Project Name</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Contact</TableHead>
+                  <TableHead>Contact Number</TableHead> {/* New column header */}
                   <TableHead>Financial</TableHead>
                   <TableHead>Created</TableHead>
                   <TableHead className="w-[100px]">Actions</TableHead>
@@ -91,14 +104,41 @@ export function ProjectsTable({ projects, onViewProject, onEditProject, onDelete
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge className={statusConfig[project.status].className}>
-                          {statusConfig[project.status].label}
-                        </Badge>
+                        <Select
+                          value={project.status}
+                          onValueChange={(newStatus: ProjectStatus) => {
+                            setProjectToUpdate({ id: project.id, newStatus })
+                            setShowConfirmDialog(true)
+                          }}
+                        >
+                          <SelectTrigger className="w-[120px] h-8 text-xs">
+                            <SelectValue placeholder="Status">
+                              <Badge className={statusConfig[project.status].className}>
+                                {statusConfig[project.status].label}
+                              </Badge>
+                            </SelectValue>
+                          </SelectTrigger>
+                          <SelectContent>
+                            {Object.entries(statusConfig).map(([statusKey, statusValue]) => (
+                              <SelectItem key={statusKey} value={statusKey}>
+                                <Badge className={statusValue.className}>
+                                  {statusValue.label}
+                                </Badge>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </TableCell>
                       <TableCell>
                         <div className="text-sm">
                           <div className="font-medium">{project.contact.name}</div>
                           <div className="text-muted-foreground">{project.contact.email}</div>
+                        </div>
+                      </TableCell>
+                      {/* New TableCell for Contact Number */}
+                      <TableCell>
+                        <div className="text-sm text-muted-foreground">
+                          {project.contact.phone || "-"}
                         </div>
                       </TableCell>
                       <TableCell>
@@ -156,6 +196,18 @@ export function ProjectsTable({ projects, onViewProject, onEditProject, onDelete
           </div>
         )}
       </CardContent>
+      <ConfirmDialog
+        open={showConfirmDialog}
+        onOpenChange={setShowConfirmDialog}
+        title="Confirm Status Change"
+        description={`Are you sure you want to change the status of this project to "${projectToUpdate?.newStatus.replace("-", " ")}"?`}
+        onConfirm={() => {
+          if (projectToUpdate) {
+            onStatusChange(projectToUpdate.id, projectToUpdate.newStatus)
+            setProjectToUpdate(null)
+          }
+        }}
+      />
     </Card>
   )
 }

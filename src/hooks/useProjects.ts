@@ -350,7 +350,7 @@ export function useProjects() {
           );
 
         if (reportUpdateError) {
-          console.error("Supabase project financial report update error:", reportUpdateError);
+          console.error("Supabase project financial report update error for project_id:", id, reportUpdateError);
           throw reportUpdateError;
         }
       }

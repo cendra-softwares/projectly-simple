@@ -1,7 +1,9 @@
 import jsPDF from "jspdf";
-import "jspdf-autotable";
+import { applyPlugin } from "jspdf-autotable";
 import { Project } from "@/types/project";
 import { formatCurrency } from "./utils";
+
+applyPlugin(jsPDF); // Apply the plugin right after importing jsPDF
 
 console.log("pdf-utils.ts module loaded.");
 
@@ -46,7 +48,8 @@ export const generateAnalyticsPdf = (
   });
 
   // Final Calculation Area
-  const finalCalculationsY = (doc as any).autoTable.previous.finalY + 10;
+  // Use doc.lastAutoTable.finalY to get the Y-coordinate of the end of the last table.
+  const finalCalculationsY = (doc as any).lastAutoTable.finalY + 10;
   doc.setFontSize(14);
   doc.text("Summary Statistics", 14, finalCalculationsY);
 

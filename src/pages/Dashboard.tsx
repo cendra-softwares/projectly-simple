@@ -12,6 +12,7 @@ import { Project, ProjectStatus } from "@/types/project"; // Import ProjectStatu
 import { useState } from "react";
 import { toast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/lib/utils"; // Import the utility function
+import { Separator } from "@/components/ui/separator"; // Import Separator
 
 const Dashboard = () => {
   const { projects, stats, deleteProject, addProject, updateProject } =
@@ -105,56 +106,69 @@ const Dashboard = () => {
         </p>
       </div>
 
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          title="Total Projects"
-          value={stats.total}
-          icon={FolderOpen}
-          className="animate-fade-in"
-        />
-        <StatCard
-          title="In Progress"
-          value={stats.inWork}
-          icon={Clock}
-          variant="in-work"
-          className="animate-fade-in"
-        />
-        <StatCard
-          title="Pending"
-          value={stats.pending}
-          icon={BarChart3}
-          variant="pending"
-          className="animate-fade-in"
-        />
-        <StatCard
-          title="Completed"
-          value={stats.done}
-          icon={CheckCircle}
-          variant="done"
-          className="animate-fade-in"
-        />
-        <StatCard
-          title="Total Expenses"
-          value={formatCurrency(totalExpenses)}
-          icon={ArrowDownCircle}
-          variant="in-work"
-          className="animate-fade-in"
-        />
-        <StatCard
-          title="Total Profits"
-          value={formatCurrency(totalProfits)}
-          icon={ArrowUpCircle}
-          variant="done"
-          className="animate-fade-in"
-        />
-        <StatCard
-          title="Net Profit"
-          value={formatCurrency(netProfit)}
-          icon={Scale}
-          variant={netProfit > 0 ? "done" : "pending"}
-          className="animate-fade-in"
-        />
+      {/* Project Statistics */}
+      <div className="space-y-4">
+        <h3 className="text-xl font-semibold">Project Overview</h3>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <StatCard
+            title="Total Projects"
+            value={stats.total}
+            icon={FolderOpen}
+            className="animate-fade-in"
+          />
+          <StatCard
+            title="In Progress"
+            value={stats.inWork}
+            icon={Clock}
+            variant="in-work"
+            className="animate-fade-in"
+          />
+          <StatCard
+            title="Pending"
+            value={stats.pending}
+            icon={BarChart3}
+            variant="pending"
+            className="animate-fade-in"
+          />
+          <StatCard
+            title="Completed"
+            value={stats.done}
+            icon={CheckCircle}
+            variant="done"
+            className="animate-fade-in"
+          />
+        </div>
+      </div>
+
+      {/* Separator */}
+      <Separator className="my-8" />
+
+      {/* Financial Statistics */}
+      <div className="space-y-4">
+        <h3 className="text-xl font-semibold">Financial Overview</h3>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3"> {/* Adjusted grid for financial stats */}
+          <StatCard
+            title="Total Expenses"
+            value={formatCurrency(totalExpenses)}
+            icon={ArrowDownCircle}
+            variant="in-work"
+            className="animate-fade-in"
+          />
+          <StatCard
+            title="Total Profits"
+            value={formatCurrency(totalProfits)}
+            icon={ArrowUpCircle}
+            variant="done"
+            className="animate-fade-in"
+          />
+          <StatCard
+            title="Net Profit"
+            value={formatCurrency(netProfit)}
+            icon={Scale}
+            variant={netProfit > 0 ? "done" : "pending"}
+            className="animate-fade-in"
+          />
+        </div>
       </div>
 
       {/* Charts and Analytics */}

@@ -1,5 +1,5 @@
-import { useState } from "react"
-import { Eye, MoreHorizontal, Pencil, Trash2 } from "lucide-react"
+import { useState } from "react";
+import { Eye, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -7,53 +7,66 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
+} from "@/components/ui/table";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
-import { Project, ProjectStatus } from "@/types/project"
-import { formatCurrency } from "@/lib/utils" // Import the utility function
-import { ConfirmDialog } from "@/components/ui/ConfirmDialog" // Import ConfirmDialog
+} from "@/components/ui/select";
+import { Project, ProjectStatus } from "@/types/project";
+import { formatCurrency } from "@/lib/utils"; // Import the utility function
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog"; // Import ConfirmDialog
 
 interface ProjectsTableProps {
-  projects: Project[]
-  onViewProject: (project: Project) => void
-  onEditProject: (project: Project) => void
-  onDeleteProject: (projectId: number) => void // Change type to number
-  onCreateProject: () => void // Add new prop
-  onStatusChange: (projectId: number, newStatus: ProjectStatus) => void // New prop for status change
+  projects: Project[];
+  onViewProject: (project: Project) => void;
+  onEditProject: (project: Project) => void;
+  onDeleteProject: (projectId: number) => void; // Change type to number
+  onCreateProject: () => void; // Add new prop
+  onStatusChange: (projectId: number, newStatus: ProjectStatus) => void; // New prop for status change
 }
 
-const statusConfig: Record<ProjectStatus, { label: string; className: string }> = {
+const statusConfig: Record<
+  ProjectStatus,
+  { label: string; className: string }
+> = {
   pending: { label: "Pending", className: "status-pending" },
   "in-work": { label: "In Work", className: "status-in-work" },
   done: { label: "Done", className: "status-done" },
-}
+};
 
-export function ProjectsTable({ projects, onViewProject, onEditProject, onDeleteProject, onCreateProject, onStatusChange }: ProjectsTableProps) {
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false)
-  const [projectToUpdate, setProjectToUpdate] = useState<{ id: number; newStatus: ProjectStatus } | null>(null)
+export function ProjectsTable({
+  projects,
+  onViewProject,
+  onEditProject,
+  onDeleteProject,
+  onCreateProject,
+  onStatusChange,
+}: ProjectsTableProps) {
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [projectToUpdate, setProjectToUpdate] = useState<{
+    id: number;
+    newStatus: ProjectStatus;
+  } | null>(null);
 
   const formatDate = (date: Date) => {
     return new Intl.DateTimeFormat("en-US", {
       month: "short",
       day: "numeric",
       year: "numeric",
-    }).format(date)
-  }
+    }).format(date);
+  };
 
   return (
     <Card className="animate-slide-up shadow-card">
@@ -84,7 +97,8 @@ export function ProjectsTable({ projects, onViewProject, onEditProject, onDelete
                   <TableHead>Project Name</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Contact</TableHead>
-                  <TableHead>Contact Number</TableHead> {/* New column header */}
+                  <TableHead>Contact Number</TableHead>{" "}
+                  {/* New column header */}
                   <TableHead>Financial</TableHead>
                   <TableHead>Created</TableHead>
                   <TableHead className="w-[100px]">Actions</TableHead>
@@ -92,9 +106,13 @@ export function ProjectsTable({ projects, onViewProject, onEditProject, onDelete
               </TableHeader>
               <TableBody>
                 {projects.map((project) => {
-                  const profit = project.financials.profits - project.financials.expenses
+                  const profit =
+                    project.financials.profits - project.financials.expenses;
                   return (
-                    <TableRow key={project.id} className="hover:bg-muted/50 transition-colors">
+                    <TableRow
+                      key={project.id}
+                      className="hover:bg-muted/50 transition-colors"
+                    >
                       <TableCell>
                         <div>
                           <div className="font-medium">{project.name}</div>
@@ -107,32 +125,42 @@ export function ProjectsTable({ projects, onViewProject, onEditProject, onDelete
                         <Select
                           value={project.status}
                           onValueChange={(newStatus: ProjectStatus) => {
-                            setProjectToUpdate({ id: project.id, newStatus })
-                            setShowConfirmDialog(true)
+                            setProjectToUpdate({ id: project.id, newStatus });
+                            setShowConfirmDialog(true);
                           }}
                         >
                           <SelectTrigger className="w-[120px] h-8 text-xs">
                             <SelectValue placeholder="Status">
-                              <Badge className={statusConfig[project.status].className}>
+                              <Badge
+                                className={
+                                  statusConfig[project.status].className
+                                }
+                              >
                                 {statusConfig[project.status].label}
                               </Badge>
                             </SelectValue>
                           </SelectTrigger>
                           <SelectContent>
-                            {Object.entries(statusConfig).map(([statusKey, statusValue]) => (
-                              <SelectItem key={statusKey} value={statusKey}>
-                                <Badge className={statusValue.className}>
-                                  {statusValue.label}
-                                </Badge>
-                              </SelectItem>
-                            ))}
+                            {Object.entries(statusConfig).map(
+                              ([statusKey, statusValue]) => (
+                                <SelectItem key={statusKey} value={statusKey}>
+                                  <Badge className={statusValue.className}>
+                                    {statusValue.label}
+                                  </Badge>
+                                </SelectItem>
+                              )
+                            )}
                           </SelectContent>
                         </Select>
                       </TableCell>
                       <TableCell>
                         <div className="text-sm">
-                          <div className="font-medium">{project.contact.name}</div>
-                          <div className="text-muted-foreground">{project.contact.email}</div>
+                          <div className="font-medium">
+                            {project.contact.name}
+                          </div>
+                          <div className="text-muted-foreground">
+                            {project.contact.email}
+                          </div>
                         </div>
                       </TableCell>
                       {/* New TableCell for Contact Number */}
@@ -143,7 +171,13 @@ export function ProjectsTable({ projects, onViewProject, onEditProject, onDelete
                       </TableCell>
                       <TableCell>
                         <div className="text-sm">
-                          <div className={`font-medium ${profit >= 0 ? "text-status-done" : "text-destructive"}`}>
+                          <div
+                            className={`font-medium ${
+                              profit >= 0
+                                ? "text-status-done"
+                                : "text-destructive"
+                            }`}
+                          >
                             {formatCurrency(profit)}
                           </div>
                           <div className="text-muted-foreground">
@@ -167,13 +201,19 @@ export function ProjectsTable({ projects, onViewProject, onEditProject, onDelete
                           </Button>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0"
+                              >
                                 <MoreHorizontal className="h-4 w-4" />
                                 <span className="sr-only">Open menu</span>
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => onEditProject(project)}>
+                              <DropdownMenuItem
+                                onClick={() => onEditProject(project)}
+                              >
                                 <Pencil className="mr-2 h-4 w-4" />
                                 Edit
                               </DropdownMenuItem>
@@ -189,7 +229,7 @@ export function ProjectsTable({ projects, onViewProject, onEditProject, onDelete
                         </div>
                       </TableCell>
                     </TableRow>
-                  )
+                  );
                 })}
               </TableBody>
             </Table>
@@ -200,14 +240,17 @@ export function ProjectsTable({ projects, onViewProject, onEditProject, onDelete
         open={showConfirmDialog}
         onOpenChange={setShowConfirmDialog}
         title="Confirm Status Change"
-        description={`Are you sure you want to change the status of this project to "${projectToUpdate?.newStatus.replace("-", " ")}"?`}
+        description={`Are you sure you want to change the status of this project to "${projectToUpdate?.newStatus.replace(
+          "-",
+          " "
+        )}"?`}
         onConfirm={() => {
           if (projectToUpdate) {
-            onStatusChange(projectToUpdate.id, projectToUpdate.newStatus)
-            setProjectToUpdate(null)
+            onStatusChange(projectToUpdate.id, projectToUpdate.newStatus);
+            setProjectToUpdate(null);
           }
         }}
       />
     </Card>
-  )
+  );
 }

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useQueryClient } from '@tanstack/react-query';
 import { Project, ProjectStats } from "@/types/project";
 import { supabase } from "@/lib/supabase";
 
@@ -7,6 +8,7 @@ export function useProjects() {
   const [projectHistory, setProjectHistory] = useState<any[]>([]); // New state for historical data
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     fetchProjects();
@@ -196,6 +198,24 @@ export function useProjects() {
 
       if (financialError) throw financialError;
 
+      const netProfit = projectData.financials.profits - projectData.financials.expenses;
+
+      const { error: reportError } = await supabase
+        .from("project_financial_reports")
+        .insert({
+          project_id: projectId,
+          project_name: projectData.name,
+          project_status: projectData.status,
+          created_at: new Date().toISOString(),
+          expenses: projectData.financials.expenses,
+          profits: projectData.financials.profits,
+          net_profit: netProfit,
+          user_id: user.id,
+        });
+
+      if (reportError) throw reportError;
+
+      queryClient.invalidateQueries({ queryKey: ['projectFinancialReports'] }); // Invalidate financial reports cache
       await fetchProjects();
       return project;
     } catch (err: any) {
@@ -296,7 +316,47 @@ export function useProjects() {
         }
       }
 
+      if (updates.financials || updates.name || updates.status) {
+        const { data: currentReport, error: fetchReportError } = await supabase
+          .from("project_financial_reports")
+          .select("*")
+          .eq("project_id", id)
+          .single();
+
+        if (fetchReportError && fetchReportError.code !== 'PGRST116') { // PGRST116 means no rows found
+          console.error("Error fetching financial report:", fetchReportError);
+          throw fetchReportError;
+        }
+
+        const updatedExpenses = updates.financials?.expenses ?? currentReport?.expenses ?? 0;
+        const updatedProfits = updates.financials?.profits ?? currentReport?.profits ?? 0;
+        const updatedNetProfit = updatedProfits - updatedExpenses;
+        const updatedName = updates.name ?? currentReport?.project_name;
+        const updatedStatus = updates.status ?? currentReport?.project_status;
+
+        const { error: reportUpdateError } = await supabase
+          .from("project_financial_reports")
+          .upsert(
+            {
+              project_id: id,
+              project_name: updatedName,
+              project_status: updatedStatus,
+              expenses: updatedExpenses,
+              profits: updatedProfits,
+              net_profit: updatedNetProfit,
+              user_id: user.id,
+            },
+            { onConflict: "project_id" }
+          );
+
+        if (reportUpdateError) {
+          console.error("Supabase project financial report update error:", reportUpdateError);
+          throw reportUpdateError;
+        }
+      }
+
       await fetchProjects();
+      queryClient.invalidateQueries({ queryKey: ['projectFinancialReports'] }); // Invalidate financial reports cache
     } catch (err: any) {
       console.error("Failed to update project - Caught error:", err);
       setError(err.message || "Failed to update project");
@@ -319,15 +379,26 @@ export function useProjects() {
       setLoading(true);
       setError(null);
 
-      const { error } = await supabase
+      const { error: projectDeleteError } = await supabase
         .from("projects")
         .delete()
         .eq("id", id)
         .eq("user_id", user.id);
 
+      if (projectDeleteError) throw projectDeleteError;
+
+      const { error: reportDeleteError } = await supabase
+        .from("project_financial_reports")
+        .delete()
+        .eq("project_id", id)
+        .eq("user_id", user.id);
+
+      if (reportDeleteError) throw reportDeleteError;
+
       if (error) throw error;
 
       await fetchProjects();
+      queryClient.invalidateQueries({ queryKey: ['projectFinancialReports'] }); // Invalidate financial reports cache
     } catch (err: any) {
       setError(err.message || "Failed to delete project");
       throw err;

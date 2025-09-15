@@ -20,6 +20,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Project, ProjectStatus } from "@/types/project";
 import { toast } from "@/hooks/use-toast";
+import { formatCurrency } from "@/lib/utils"; // Import the utility function
 
 interface ProjectFormDialogProps {
   project?: Project | null;
@@ -186,7 +187,7 @@ export function ProjectFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-11/12 sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {mode === "create" ? "Create New Project" : "Edit Project"}
@@ -353,10 +354,9 @@ export function ProjectFormDialog({
                       : "text-destructive"
                   }`}
                 >
-                  ₹
-                  {(
+                  {formatCurrency(
                     formData.financials.profits - formData.financials.expenses
-                  ).toFixed(2)}
+                  )}
                 </span>
               </div>
             </div>

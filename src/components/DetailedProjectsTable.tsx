@@ -9,6 +9,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Project, ProjectStatus } from "@/types/project";
+import { formatCurrency } from "@/lib/utils"; // Import the utility function
 
 interface DetailedProjectsTableProps {
   projects: Project[];
@@ -21,13 +22,6 @@ const statusConfig: Record<ProjectStatus, { label: string; className: string }> 
 };
 
 export function DetailedProjectsTable({ projects }: DetailedProjectsTableProps) {
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency: "INR",
-    }).format(amount);
-  };
-
   const formatDate = (date: Date) => {
     return new Intl.DateTimeFormat("en-US", {
       month: "short",
@@ -52,7 +46,7 @@ export function DetailedProjectsTable({ projects }: DetailedProjectsTableProps) 
             No projects to display.
           </div>
         ) : (
-          <div className="rounded-lg border">
+          <div className="rounded-lg border overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>

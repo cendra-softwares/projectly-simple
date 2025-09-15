@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Project, ProjectStatus } from "@/types/project"
+import { formatCurrency } from "@/lib/utils" // Import the utility function
 
 interface ProjectsTableProps {
   projects: Project[]
@@ -34,13 +35,6 @@ const statusConfig: Record<ProjectStatus, { label: string; className: string }> 
 }
 
 export function ProjectsTable({ projects, onViewProject, onEditProject, onDeleteProject, onCreateProject }: ProjectsTableProps) {
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency: "INR",
-    }).format(amount)
-  }
-
   const formatDate = (date: Date) => {
     return new Intl.DateTimeFormat("en-US", {
       month: "short",
@@ -71,7 +65,7 @@ export function ProjectsTable({ projects, onViewProject, onEditProject, onDelete
             </Button>
           </div>
         ) : (
-          <div className="rounded-lg border">
+          <div className="rounded-lg border overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>

@@ -35,9 +35,9 @@ const statusConfig: Record<ProjectStatus, { label: string; className: string }> 
 
 export function ProjectsTable({ projects, onViewProject, onEditProject, onDeleteProject, onCreateProject }: ProjectsTableProps) {
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
+    return new Intl.NumberFormat("en-IN", {
       style: "currency",
-      currency: "USD",
+      currency: "INR",
     }).format(amount)
   }
 

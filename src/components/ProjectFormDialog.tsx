@@ -304,7 +304,7 @@ export function ProjectFormDialog({
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="expenses">Expenses ($)</Label>
+                <Label htmlFor="expenses">Expenses (₹)</Label>
                 <Input
                   id="expenses"
                   type="number"
@@ -322,7 +322,7 @@ export function ProjectFormDialog({
               </div>
 
               <div>
-                <Label htmlFor="profits">Revenue ($)</Label>
+                <Label htmlFor="profits">Revenue (₹)</Label>
                 <Input
                   id="profits"
                   type="number"
@@ -353,7 +353,7 @@ export function ProjectFormDialog({
                       : "text-destructive"
                   }`}
                 >
-                  $
+                  ₹
                   {(
                     formData.financials.profits - formData.financials.expenses
                   ).toFixed(2)}

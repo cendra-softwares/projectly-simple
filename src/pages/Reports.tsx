@@ -1,10 +1,22 @@
-import React, { useState, useMemo, useCallback } from "react";
-import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import React, { useState, useMemo, useCallback, useEffect } from "react";
+import {
+  PieChart,
+  Pie,
+  Cell,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   useProjectFinancialReports,
   ProjectFinancialReport,
 } from "@/hooks/useFinancials";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
@@ -17,11 +29,26 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
-import { ArrowUpDown, Download, FolderOpen, ArrowDownCircle, ArrowUpCircle, Scale } from "lucide-react";
+import {
+  ArrowUpDown,
+  Download,
+  FolderOpen,
+  ArrowDownCircle,
+  ArrowUpCircle,
+  Scale,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import jsPDF from "jspdf";
-import "jspdf-autotable";
+import autoTable from "jspdf-autotable";
 import { StatCard } from "@/components/StatCard";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 const Reports: React.FC = () => {
   const {
@@ -36,20 +63,32 @@ const Reports: React.FC = () => {
     direction: "ascending" | "descending";
   }>({ key: null, direction: "ascending" });
   const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({});
-  const [amountRange, setAmountRange] = useState<{ min: string; max: string }>({ min: '', max: '' });
+  const [amountRange, setAmountRange] = useState<{ min: string; max: string }>({
+    min: "",
+    max: "",
+  });
+  const [selectedReports, setSelectedReports] = useState<Set<number>>(
+    new Set()
+  );
+  const [showPdfPreview, setShowPdfPreview] = useState(false);
+  const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null);
 
   const filteredReports = useMemo(() => {
     if (!reports) return [];
     return reports.filter((report) => {
-      const matchesFilterText = report.project_name.toLowerCase().includes(filterText.toLowerCase());
+      const matchesFilterText = report.project_name
+        .toLowerCase()
+        .includes(filterText.toLowerCase());
 
       const reportDate = new Date(report.created_at);
-      const matchesDateRange = (!dateRange.from || reportDate >= dateRange.from) &&
-                               (!dateRange.to || reportDate <= dateRange.to);
+      const matchesDateRange =
+        (!dateRange.from || reportDate >= dateRange.from) &&
+        (!dateRange.to || reportDate <= dateRange.to);
 
       const reportNetProfit = report.net_profit;
-      const matchesAmountRange = (!amountRange.min || reportNetProfit >= parseFloat(amountRange.min)) &&
-                                 (!amountRange.max || reportNetProfit <= parseFloat(amountRange.max));
+      const matchesAmountRange =
+        (!amountRange.min || reportNetProfit >= parseFloat(amountRange.min)) &&
+        (!amountRange.max || reportNetProfit <= parseFloat(amountRange.max));
 
       return matchesFilterText && matchesDateRange && matchesAmountRange;
     });
@@ -63,10 +102,12 @@ const Reports: React.FC = () => {
         const bValue = b[sortConfig.key!];
 
         // Handle date sorting
-        if (sortConfig.key === 'created_at') {
+        if (sortConfig.key === "created_at") {
           const dateA = new Date(a.created_at).getTime();
           const dateB = new Date(b.created_at).getTime();
-          return sortConfig.direction === 'ascending' ? dateA - dateB : dateB - dateA;
+          return sortConfig.direction === "ascending"
+            ? dateA - dateB
+            : dateB - dateA;
         }
 
         if (typeof aValue === "string" && typeof bValue === "string") {
@@ -94,8 +135,8 @@ const Reports: React.FC = () => {
   }, [filteredReports]);
 
   const chartData = [
-    { name: 'Total Expenses', value: totalExpenses, color: '#FF8042' },
-    { name: 'Total Profits', value: totalProfits, color: '#00C49F' },
+    { name: "Total Expenses", value: totalExpenses, color: "#FF8042" },
+    { name: "Total Profits", value: totalProfits, color: "#00C49F" },
   ];
 
   const handleDateSelect = useCallback((range: { from?: Date; to?: Date }) => {
@@ -110,7 +151,7 @@ const Reports: React.FC = () => {
     setSortConfig({ key, direction });
   };
 
-  const downloadPdf = () => {
+  const generatePdfContent = (reportsToGenerate: ProjectFinancialReport[]) => {
     const doc = new jsPDF();
     doc.setFontSize(18);
     doc.text("Financial Reports", 14, 22);
@@ -125,19 +166,19 @@ const Reports: React.FC = () => {
     ];
     const tableRows: (string | number)[][] = [];
 
-    sortedReports.forEach((report) => {
+    reportsToGenerate.forEach((report) => {
       const reportData = [
         report.project_name,
         report.project_status,
         format(new Date(report.created_at), "PPP"),
-        `$${report.expenses.toFixed(2)}`,
-        `$${report.profits.toFixed(2)}`,
-        `$${report.net_profit.toFixed(2)}`,
+        `₹${report.expenses.toFixed(2)}`,
+        `₹${report.profits.toFixed(2)}`,
+        `₹${report.net_profit.toFixed(2)}`,
       ];
       tableRows.push(reportData);
     });
 
-    (doc as any).autoTable({
+    autoTable(doc, {
       head: [tableColumn],
       body: tableRows,
       startY: 30,
@@ -156,8 +197,9 @@ const Reports: React.FC = () => {
         fillColor: "#f2f2f2",
       },
       didDrawCell: (data: any) => {
-        if (data.column.index === 5 && data.cell.section === 'body') { // Net Profit column
-          const netProfit = parseFloat(data.cell.text[0].replace('$', ''));
+        if (data.column.index === 5 && data.cell.section === "body") {
+          // Net Profit column
+          const netProfit = parseFloat(data.cell.text[0].replace("₹", ""));
           if (netProfit > 0) {
             doc.setTextColor(34, 139, 34); // Green
           } else if (netProfit < 0) {
@@ -168,11 +210,44 @@ const Reports: React.FC = () => {
         } else {
           doc.setTextColor(0, 0, 0); // Reset to black for other cells
         }
-      }
+      },
     });
-
-    doc.save("financial_reports.pdf");
+    return doc;
   };
+
+  const handlePreviewPdf = () => {
+    const reportsToPrint = sortedReports.filter((report) =>
+      selectedReports.has(report.project_id)
+    );
+
+    if (reportsToPrint.length === 0) {
+      alert("Please select at least one report to preview.");
+      return;
+    }
+    const doc = generatePdfContent(reportsToPrint);
+    const pdfBlob = doc.output("blob");
+    const url = URL.createObjectURL(pdfBlob);
+    setPdfBlobUrl(url);
+    setShowPdfPreview(true);
+  };
+
+  const handleDownloadPdf = () => {
+    if (pdfBlobUrl) {
+      const a = document.createElement("a");
+      a.href = pdfBlobUrl;
+      a.download = "financial_reports.pdf";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+  };
+
+  useEffect(() => {
+    if (!showPdfPreview && pdfBlobUrl) {
+      URL.revokeObjectURL(pdfBlobUrl);
+      setPdfBlobUrl(null);
+    }
+  }, [showPdfPreview, pdfBlobUrl]);
 
   if (isLoading) return <div>Loading financial reports...</div>;
   if (isError) return <div>Error: {error?.message}</div>;
@@ -200,12 +275,16 @@ const Reports: React.FC = () => {
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(value) => `$${(value as number).toFixed(2)}`} />
+                <Tooltip
+                  formatter={(value) => `₹${(value as number).toFixed(2)}`}
+                />
                 <Legend />
               </PieChart>
             </ResponsiveContainer>
           ) : (
-            <div className="text-center text-muted-foreground">No data for chart.</div>
+            <div className="text-center text-muted-foreground">
+              No data for chart.
+            </div>
           )}
         </div>
         <div className="grid gap-4 grid-cols-2">
@@ -217,23 +296,23 @@ const Reports: React.FC = () => {
           />
           <StatCard
             title="Total Expenses"
-            value={`$${totalExpenses.toFixed(2)}`}
+            value={`₹${totalExpenses.toFixed(2)}`}
             icon={ArrowDownCircle}
             variant="in-work"
             className="animate-fade-in"
           />
           <StatCard
             title="Total Profits"
-            value={`$${totalProfits.toFixed(2)}`}
+            value={`₹${totalProfits.toFixed(2)}`}
             icon={ArrowUpCircle}
             variant="done"
             className="animate-fade-in"
           />
           <StatCard
             title="Net Profit"
-            value={`$${(totalProfits - totalExpenses).toFixed(2)}`}
+            value={`₹${(totalProfits - totalExpenses).toFixed(2)}`}
             icon={Scale}
-            variant={(totalProfits - totalExpenses) > 0 ? "done" : "pending"}
+            variant={totalProfits - totalExpenses > 0 ? "done" : "pending"}
             className="animate-fade-in"
           />
         </div>
@@ -287,23 +366,31 @@ const Reports: React.FC = () => {
               type="number"
               placeholder="Min Amount (Net Profit)"
               value={amountRange.min}
-              onChange={(e) => setAmountRange({ ...amountRange, min: e.target.value })}
+              onChange={(e) =>
+                setAmountRange({ ...amountRange, min: e.target.value })
+              }
               className="w-full"
             />
             <Input
               type="number"
               placeholder="Max Amount (Net Profit)"
               value={amountRange.max}
-              onChange={(e) => setAmountRange({ ...amountRange, max: e.target.value })}
+              onChange={(e) =>
+                setAmountRange({ ...amountRange, max: e.target.value })
+              }
               className="w-full"
             />
           </div>
         </div>
 
         <div className="flex items-center justify-end">
-          <Button onClick={downloadPdf} className="flex items-center gap-2">
+          <Button
+            onClick={handlePreviewPdf}
+            className="flex items-center gap-2"
+            disabled={selectedReports.size === 0}
+          >
             <Download className="h-4 w-4" />
-            Download PDF
+            Preview PDF
           </Button>
         </div>
       </div>
@@ -312,6 +399,24 @@ const Reports: React.FC = () => {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-[50px] text-center">
+                <Checkbox
+                  checked={
+                    sortedReports.length > 0 &&
+                    selectedReports.size === sortedReports.length
+                  }
+                  onCheckedChange={(checked) => {
+                    if (checked) {
+                      const allProjectIds = new Set(
+                        sortedReports.map((report) => report.project_id)
+                      );
+                      setSelectedReports(allProjectIds);
+                    } else {
+                      setSelectedReports(new Set());
+                    }
+                  }}
+                />
+              </TableHead>
               <TableHead>
                 <Button
                   variant="ghost"
@@ -366,21 +471,43 @@ const Reports: React.FC = () => {
             {sortedReports.length > 0 ? (
               sortedReports.map((report) => (
                 <TableRow key={report.project_id}>
+                  <TableCell className="text-center">
+                    <Checkbox
+                      checked={selectedReports.has(report.project_id)}
+                      onCheckedChange={(checked) => {
+                        setSelectedReports((prevSelected) => {
+                          const newSelected = new Set(prevSelected);
+                          if (checked) {
+                            newSelected.add(report.project_id);
+                          } else {
+                            newSelected.delete(report.project_id);
+                          }
+                          return newSelected;
+                        });
+                      }}
+                    />
+                  </TableCell>
                   <TableCell className="font-medium">
                     {report.project_name}
                   </TableCell>
                   <TableCell>{report.project_status}</TableCell>
-                  <TableCell>{format(new Date(report.created_at), "PPP")}</TableCell>
-                  <TableCell>${report.expenses.toFixed(2)}</TableCell>
-                  <TableCell>${report.profits.toFixed(2)}</TableCell>
-                  <TableCell className={report.net_profit > 0 ? "text-green-600" : "text-red-600"}>
-                    ${report.net_profit.toFixed(2)}
+                  <TableCell>
+                    {format(new Date(report.created_at), "PPP")}
+                  </TableCell>
+                  <TableCell>₹{report.expenses.toFixed(2)}</TableCell>
+                  <TableCell>₹{report.profits.toFixed(2)}</TableCell>
+                  <TableCell
+                    className={
+                      report.net_profit > 0 ? "text-green-600" : "text-red-600"
+                    }
+                  >
+                    ₹{report.net_profit.toFixed(2)}
                   </TableCell>
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={6} className="h-24 text-center">
+                <TableCell colSpan={7} className="h-24 text-center">
                   No financial reports found.
                 </TableCell>
               </TableRow>
@@ -388,6 +515,33 @@ const Reports: React.FC = () => {
           </TableBody>
         </Table>
       </div>
+
+      <Dialog open={showPdfPreview} onOpenChange={setShowPdfPreview}>
+        <DialogContent className="max-w-4xl h-[90vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>PDF Preview</DialogTitle>
+            <DialogDescription>
+              Preview of your selected financial reports.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex-grow">
+            {pdfBlobUrl && (
+              <iframe
+                src={pdfBlobUrl}
+                width="100%"
+                height="100%"
+                title="PDF Preview"
+              ></iframe>
+            )}
+          </div>
+          <DialogFooter>
+            <Button onClick={handleDownloadPdf}>Download PDF</Button>
+            <Button variant="outline" onClick={() => setShowPdfPreview(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

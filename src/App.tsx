@@ -3,7 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { SidebarProvider, SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { AppSidebar } from "@/components/AppSidebar";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,7 @@ import Analytics from "./pages/Analytics";
 import Reports from "./pages/Reports";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AuthProvider, useAuth } from "./hooks/useAuth";
+import { useIsMobile } from "./hooks/use-mobile";
 
 const queryClient = new QueryClient();
 
@@ -27,6 +28,8 @@ const AppLayout = () => {
   const { addProject } = useProjects();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const { user, loading } = useAuth();
+  const isMobile = useIsMobile();
+  const { openMobile } = useSidebar(); // Get openMobile state from sidebar context
 
   const showAddProjectButton = user && !loading;
 
@@ -40,34 +43,32 @@ const AppLayout = () => {
   };
 
   return (
-    <SidebarProvider>
-      <div className="flex min-h-screen w-full">
-        <AppSidebar />
-        <main className="flex-1 flex flex-col">
-          <header className="h-14 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 flex items-center justify-between px-6">
-            <div className="flex items-center">
-              <SidebarTrigger className="mr-4" />
-              <h1 className="text-lg font-semibold">Project Management Dashboard</h1>
-            </div>
-          </header>
-          <div className="flex-1 p-6">
-            <Routes>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/projects" element={<Projects />} />
-              <Route path="/analytics" element={<Analytics />} />
-              <Route path="/reports" element={<Reports />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
+    <div className="flex min-h-screen w-full">
+      <AppSidebar />
+      <main className="flex-1 flex flex-col">
+        <header className="h-14 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 flex items-center justify-between px-6">
+          <div className="flex items-center">
+            {isMobile && <SidebarTrigger className="mr-4" />} {/* Only show trigger on mobile */}
+            <h1 className="text-lg font-semibold">Project Management Dashboard</h1>
           </div>
-        </main>
-      </div>
+        </header>
+        <div className={`flex-1 p-6 ${isMobile && openMobile ? "ml-64" : ""}`}> {/* Adjust padding for mobile when sidebar is open */}
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/projects" element={<Projects />} />
+            <Route path="/analytics" element={<Analytics />} />
+            <Route path="/reports" element={<Reports />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </div>
+      </main>
       <ProjectFormDialog
         open={showCreateDialog}
         onOpenChange={setShowCreateDialog}
         onSubmit={handleCreateProject}
         mode="create"
       />
-    </SidebarProvider>
+    </div>
   );
 };
 
@@ -94,7 +95,9 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <AuthProvider>
-            <AppContent />
+            <SidebarProvider> {/* Moved SidebarProvider here */}
+              <AppContent />
+            </SidebarProvider>
           </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>

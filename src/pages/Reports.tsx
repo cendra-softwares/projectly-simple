@@ -49,6 +49,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { formatCurrency } from "@/lib/utils"; // Import the utility function
 
 const Reports: React.FC = () => {
   const {
@@ -171,9 +172,9 @@ const Reports: React.FC = () => {
         report.project_name,
         report.project_status,
         format(new Date(report.created_at), "PPP"),
-        `₹${report.expenses.toFixed(2)}`,
-        `₹${report.profits.toFixed(2)}`,
-        `₹${report.net_profit.toFixed(2)}`,
+        formatCurrency(report.expenses),
+        formatCurrency(report.profits),
+        formatCurrency(report.net_profit),
       ];
       tableRows.push(reportData);
     });
@@ -276,7 +277,7 @@ const Reports: React.FC = () => {
                   ))}
                 </Pie>
                 <Tooltip
-                  formatter={(value) => `₹${(value as number).toFixed(2)}`}
+                  formatter={(value) => formatCurrency(value as number)}
                 />
                 <Legend />
               </PieChart>
@@ -296,21 +297,21 @@ const Reports: React.FC = () => {
           />
           <StatCard
             title="Total Expenses"
-            value={`₹${totalExpenses.toFixed(2)}`}
+            value={formatCurrency(totalExpenses)}
             icon={ArrowDownCircle}
             variant="in-work"
             className="animate-fade-in"
           />
           <StatCard
             title="Total Profits"
-            value={`₹${totalProfits.toFixed(2)}`}
+            value={formatCurrency(totalProfits)}
             icon={ArrowUpCircle}
             variant="done"
             className="animate-fade-in"
           />
           <StatCard
             title="Net Profit"
-            value={`₹${(totalProfits - totalExpenses).toFixed(2)}`}
+            value={formatCurrency(totalProfits - totalExpenses)}
             icon={Scale}
             variant={totalProfits - totalExpenses > 0 ? "done" : "pending"}
             className="animate-fade-in"
@@ -327,12 +328,13 @@ const Reports: React.FC = () => {
             onChange={(e) => setFilterText(e.target.value)}
             className="max-w-full"
           />
-          <div className="flex gap-4">
+          {/* Stack filters vertically on mobile, then go horizontal on larger screens */}
+          <div className="flex flex-col sm:flex-row gap-4">
             <Popover>
               <PopoverTrigger asChild>
                 <Button
                   variant={"outline"}
-                  className={`w-[240px] justify-start text-left font-normal ${
+                  className={`w-full justify-start text-left font-normal ${
                     !dateRange.from ? "text-muted-foreground" : ""
                   }`}
                 >
@@ -494,14 +496,14 @@ const Reports: React.FC = () => {
                   <TableCell>
                     {format(new Date(report.created_at), "PPP")}
                   </TableCell>
-                  <TableCell>₹{report.expenses.toFixed(2)}</TableCell>
-                  <TableCell>₹{report.profits.toFixed(2)}</TableCell>
+                  <TableCell>{formatCurrency(report.expenses)}</TableCell>
+                  <TableCell>{formatCurrency(report.profits)}</TableCell>
                   <TableCell
                     className={
                       report.net_profit > 0 ? "text-green-600" : "text-red-600"
                     }
                   >
-                    ₹{report.net_profit.toFixed(2)}
+                    {formatCurrency(report.net_profit)}
                   </TableCell>
                 </TableRow>
               ))

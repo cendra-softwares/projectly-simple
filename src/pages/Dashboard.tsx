@@ -11,6 +11,7 @@ import { useProjectFinancialReports } from "@/hooks/useFinancials";
 import { Project } from "@/types/project";
 import { useState } from "react";
 import { toast } from "@/hooks/use-toast";
+import { formatCurrency } from "@/lib/utils"; // Import the utility function
 
 const Dashboard = () => {
   const { projects, stats, deleteProject, addProject, updateProject } =
@@ -89,7 +90,7 @@ const Dashboard = () => {
       </div>
 
       {/* Statistics Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Total Projects"
           value={stats.total}
@@ -119,21 +120,21 @@ const Dashboard = () => {
         />
         <StatCard
           title="Total Expenses"
-          value={`₹${totalExpenses.toFixed(2)}`}
+          value={formatCurrency(totalExpenses)}
           icon={ArrowDownCircle}
           variant="in-work"
           className="animate-fade-in"
         />
         <StatCard
           title="Total Profits"
-          value={`₹${totalProfits.toFixed(2)}`}
+          value={formatCurrency(totalProfits)}
           icon={ArrowUpCircle}
           variant="done"
           className="animate-fade-in"
         />
         <StatCard
           title="Net Profit"
-          value={`₹${netProfit.toFixed(2)}`}
+          value={formatCurrency(netProfit)}
           icon={Scale}
           variant={netProfit > 0 ? "done" : "pending"}
           className="animate-fade-in"
@@ -141,7 +142,7 @@ const Dashboard = () => {
       </div>
 
       {/* Charts and Analytics */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
         <ProjectStatusChart data={stats} />
         <ProjectProgressOverview stats={stats} />
         <QuickActions onCreateProject={() => setShowCreateDialog(true)} />

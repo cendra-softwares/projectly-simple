@@ -45,7 +45,7 @@ const Analytics = () => {
       </div>
 
       {/* Statistics Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Total Projects"
           value={stats.total}
@@ -76,7 +76,7 @@ const Analytics = () => {
       </div>
 
       {/* Charts and Graphs */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
         <ProjectProgressChart data={projectHistory} />
         <ProjectStatusPieChart stats={stats} />
       </div>

@@ -8,8 +8,8 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { Project } from "@/types/project"
-import { 
-  Calendar, 
+import {
+  Calendar,
   User,
   Mail,
   Phone,
@@ -22,6 +22,7 @@ import {
   FileText,
   Building
 } from "lucide-react"
+import { formatCurrency } from "@/lib/utils" // Import the utility function
 
 interface ProjectViewDialogProps {
   project: Project | null
@@ -58,13 +59,6 @@ export function ProjectViewDialog({ project, open, onOpenChange }: ProjectViewDi
     }
   }
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency: "INR",
-    }).format(amount)
-  }
-
   const formatDate = (date: Date) => {
     return new Intl.DateTimeFormat("en-US", {
       year: "numeric",
@@ -76,7 +70,7 @@ export function ProjectViewDialog({ project, open, onOpenChange }: ProjectViewDi
   }
 
   const netProfit = project.financials.profits - project.financials.expenses
-  const profitMargin = project.financials.profits > 0 
+  const profitMargin = project.financials.profits > 0
     ? ((netProfit / project.financials.profits) * 100).toFixed(1)
     : "0"
 
@@ -86,7 +80,7 @@ export function ProjectViewDialog({ project, open, onOpenChange }: ProjectViewDi
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-11/12 sm:max-w-xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-3 text-2xl">
             <Building className="h-6 w-6" />

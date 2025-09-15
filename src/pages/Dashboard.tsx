@@ -1,4 +1,4 @@
-import { BarChart3, FolderOpen, Clock, CheckCircle } from "lucide-react";
+import { BarChart3, FolderOpen, Clock, CheckCircle, ArrowDownCircle, ArrowUpCircle, Scale } from "lucide-react";
 import { StatCard } from "@/components/StatCard";
 import { ProjectsTable } from "@/components/ProjectsTable";
 import { ProjectStatusChart } from "@/components/ProjectStatusChart";
@@ -7,6 +7,7 @@ import { QuickActions } from "@/components/QuickActions";
 import { ProjectFormDialog } from "@/components/ProjectFormDialog";
 import { ProjectViewDialog } from "@/components/ProjectViewDialog";
 import { useProjects } from "@/hooks/useProjects";
+import { useProjectFinancialReports } from "@/hooks/useFinancials";
 import { Project } from "@/types/project";
 import { useState } from "react";
 import { toast } from "@/hooks/use-toast";
@@ -14,11 +15,16 @@ import { toast } from "@/hooks/use-toast";
 const Dashboard = () => {
   const { projects, stats, deleteProject, addProject, updateProject } =
     useProjects();
+  const { data: financialReports } = useProjectFinancialReports();
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showViewDialog, setShowViewDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false); // New state for edit dialog
   const [projectToEdit, setProjectToEdit] = useState<Project | null>(null); // New state to hold project being edited
+
+  const totalExpenses = financialReports?.reduce((sum, report) => sum + report.expenses, 0) || 0;
+  const totalProfits = financialReports?.reduce((sum, report) => sum + report.profits, 0) || 0;
+  const netProfit = totalProfits - totalExpenses;
 
   const handleViewProject = (project: Project) => {
     setSelectedProject(project);
@@ -109,6 +115,27 @@ const Dashboard = () => {
           value={stats.done}
           icon={CheckCircle}
           variant="done"
+          className="animate-fade-in"
+        />
+        <StatCard
+          title="Total Expenses"
+          value={`₹${totalExpenses.toFixed(2)}`}
+          icon={ArrowDownCircle}
+          variant="in-work"
+          className="animate-fade-in"
+        />
+        <StatCard
+          title="Total Profits"
+          value={`₹${totalProfits.toFixed(2)}`}
+          icon={ArrowUpCircle}
+          variant="done"
+          className="animate-fade-in"
+        />
+        <StatCard
+          title="Net Profit"
+          value={`₹${netProfit.toFixed(2)}`}
+          icon={Scale}
+          variant={netProfit > 0 ? "done" : "pending"}
           className="animate-fade-in"
         />
       </div>

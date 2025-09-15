@@ -10,12 +10,11 @@ import { Separator } from "@/components/ui/separator"
 import { Project } from "@/types/project"
 import { 
   Calendar, 
-  User, 
-  Mail, 
-  Phone, 
-  MapPin, 
-  DollarSign, 
-  TrendingUp, 
+  User,
+  Mail,
+  Phone,
+  MapPin,
+  TrendingUp,
   TrendingDown,
   Clock,
   CheckCircle,
@@ -60,9 +59,9 @@ export function ProjectViewDialog({ project, open, onOpenChange }: ProjectViewDi
   }
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
+    return new Intl.NumberFormat("en-IN", {
       style: "currency",
-      currency: "USD",
+      currency: "INR",
     }).format(amount)
   }
 
@@ -187,7 +186,6 @@ export function ProjectViewDialog({ project, open, onOpenChange }: ProjectViewDi
             <Card className="gradient-card">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <DollarSign className="h-5 w-5" />
                   Financial Overview
                 </CardTitle>
               </CardHeader>
@@ -211,7 +209,6 @@ export function ProjectViewDialog({ project, open, onOpenChange }: ProjectViewDi
                   
                   <div className="flex items-center justify-between p-3 bg-primary/10 rounded-lg border border-primary/20">
                     <div className="flex items-center gap-2">
-                      <DollarSign className="h-4 w-4 text-primary" />
                       <span className="text-sm font-medium">Net Profit</span>
                     </div>
                     <span className={`font-bold ${netProfit >= 0 ? 'text-status-done' : 'text-destructive'}`}>

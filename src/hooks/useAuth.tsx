@@ -21,6 +21,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Check active session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
+      console.log('user session', session)
       setUser(session?.user ?? null)
       setLoading(false)
     })

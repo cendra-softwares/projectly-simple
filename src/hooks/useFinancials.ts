@@ -14,7 +14,8 @@ export interface ProjectFinancialReport {
 async function getProjectFinancialReports(): Promise<ProjectFinancialReport[]> {
   const { data, error } = await supabase
     .from('project_financial_reports')
-    .select('*');
+    .select('*')
+    .eq('user_id', (await supabase.auth.getUser()).data.user?.id);
 
   if (error) {
     throw new Error(error.message);

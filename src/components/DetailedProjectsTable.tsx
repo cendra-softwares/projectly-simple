@@ -53,6 +53,7 @@ export function DetailedProjectsTable({ projects }: DetailedProjectsTableProps) 
                   <TableHead>Project Name</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Contact</TableHead>
+                  <TableHead>Contact Number</TableHead> {/* New column header */}
                   <TableHead>Financial</TableHead>
                   <TableHead>Created</TableHead>
                 </TableRow>
@@ -79,6 +80,12 @@ export function DetailedProjectsTable({ projects }: DetailedProjectsTableProps) 
                         <div className="text-sm">
                           <div className="font-medium">{project.contact.name}</div>
                           <div className="text-muted-foreground">{project.contact.email}</div>
+                        </div>
+                      </TableCell>
+                      {/* New TableCell for Contact Number */}
+                      <TableCell>
+                        <div className="text-sm text-muted-foreground">
+                          {project.contact.phone || "-"}
                         </div>
                       </TableCell>
                       <TableCell>

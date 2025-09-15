@@ -8,7 +8,7 @@ import { ProjectFormDialog } from "@/components/ProjectFormDialog";
 import { ProjectViewDialog } from "@/components/ProjectViewDialog";
 import { useProjects } from "@/hooks/useProjects";
 import { useProjectFinancialReports } from "@/hooks/useFinancials";
-import { Project } from "@/types/project";
+import { Project, ProjectStatus } from "@/types/project"; // Import ProjectStatus
 import { useState } from "react";
 import { toast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/lib/utils"; // Import the utility function
@@ -22,6 +22,22 @@ const Dashboard = () => {
   const [showViewDialog, setShowViewDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false); // New state for edit dialog
   const [projectToEdit, setProjectToEdit] = useState<Project | null>(null); // New state to hold project being edited
+
+  const handleStatusChange = async (projectId: number, newStatus: ProjectStatus) => {
+    try {
+      await updateProject(projectId, { status: newStatus });
+      toast({
+        title: "Project Status Updated",
+        description: `Project status has been updated to ${newStatus}.`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: `Failed to update project status: ${error.message}`,
+        variant: "destructive",
+      });
+    }
+  };
 
   const totalExpenses = financialReports?.reduce((sum, report) => sum + report.expenses, 0) || 0;
   const totalProfits = financialReports?.reduce((sum, report) => sum + report.profits, 0) || 0;
@@ -163,6 +179,7 @@ const Dashboard = () => {
           onEditProject={handleEditProject}
           onDeleteProject={handleDeleteProject}
           onCreateProject={() => setShowCreateDialog(true)}
+          onStatusChange={handleStatusChange} // Pass the new handler
         />
       </div>
 

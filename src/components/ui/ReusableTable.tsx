@@ -1,5 +1,13 @@
 import { useState, useMemo } from "react";
-import { Eye, MoreHorizontal, Pencil, Trash2, Search, Filter } from "lucide-react";
+import {
+  Eye,
+  MoreHorizontal,
+  Pencil,
+  Trash2,
+  Search,
+  Filter,
+  ArrowUpDown,
+} from "lucide-react";
 import {
   Table,
   TableBody,
@@ -24,10 +32,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Input } from "@/components/ui/input"; // Import Input
+import { Input } from "@/components/ui/input";
 import { Project, ProjectStatus } from "@/types/project";
 import { formatCurrency } from "@/lib/utils";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Label } from "@/components/ui/label";
 
 interface ReusableTableProps {
   data: Project[];
@@ -64,10 +78,17 @@ export function ReusableTable({
     id: number;
     newStatus: ProjectStatus;
   } | null>(null);
-  const [searchTerm, setSearchTerm] = useState(""); // Add searchTerm state
-  const [statusFilter, setStatusFilter] = useState<ProjectStatus | "all">( // Add statusFilter state
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<ProjectStatus | "all">(
     "all"
   );
+  const [sortConfig, setSortConfig] = useState<{
+    key: keyof Project | "profit";
+    direction: "ascending" | "descending";
+  } | null>(null);
+  const [financialFilter, setFinancialFilter] = useState<string | "all">("all");
+  const [minProfit, setMinProfit] = useState<number | "">("");
+  const [maxProfit, setMaxProfit] = useState<number | "">("");
 
   const formatDate = (date: Date) => {
     return new Intl.DateTimeFormat("en-US", {
@@ -77,25 +98,110 @@ export function ReusableTable({
     }).format(date);
   };
 
-  const filteredAndSearchedProjects = useMemo(() => {
-    let projectsToFilter = data;
-    if (searchProjects) {
-      projectsToFilter = searchProjects(searchTerm);
+  const filteredProjects = useMemo(() => {
+    let currentProjects = searchProjects ? searchProjects(searchTerm) : data;
+
+    // Status filter
+    if (statusFilter !== "all") {
+      currentProjects = currentProjects.filter(
+        (project) => project.status === statusFilter
+      );
     }
 
-    return projectsToFilter.filter((project) => {
-      const matchesStatus =
-        statusFilter === "all" || project.status === statusFilter;
-      return matchesStatus;
-    });
-  }, [data, searchTerm, statusFilter, searchProjects]);
+    // Financial filter (profit/loss)
+    if (financialFilter === "profit") {
+      currentProjects = currentProjects.filter(
+        (project) =>
+          project.financials.profits - project.financials.expenses > 0
+      );
+    } else if (financialFilter === "loss") {
+      currentProjects = currentProjects.filter(
+        (project) =>
+          project.financials.profits - project.financials.expenses < 0
+      );
+    }
 
-  // Sort projects: non-"done" projects first, then by createdAt descending
-  const sortedProjects = [...filteredAndSearchedProjects].sort((a, b) => {
-    if (a.status === "done" && b.status !== "done") return 1;
-    if (a.status !== "done" && b.status === "done") return -1;
-    return b.createdAt.getTime() - a.createdAt.getTime();
-  });
+    // Min/Max Profit filter
+    if (minProfit !== "") {
+      currentProjects = currentProjects.filter(
+        (project) =>
+          project.financials.profits - project.financials.expenses >= minProfit
+      );
+    }
+    if (maxProfit !== "") {
+      currentProjects = currentProjects.filter(
+        (project) =>
+          project.financials.profits - project.financials.expenses <= maxProfit
+      );
+    }
+
+    return currentProjects;
+  }, [
+    data,
+    searchTerm,
+    statusFilter,
+    searchProjects,
+    financialFilter,
+    minProfit,
+    maxProfit,
+  ]);
+
+  const sortedProjects = useMemo(() => {
+    let sortableProjects = [...filteredProjects];
+    if (sortConfig !== null) {
+      sortableProjects.sort((a, b) => {
+        let aValue: any;
+        let bValue: any;
+
+        if (sortConfig.key === "profit") {
+          aValue = a.financials.profits - a.financials.expenses;
+          bValue = b.financials.profits - b.financials.expenses;
+        } else {
+          aValue = a[sortConfig.key];
+          bValue = b[sortConfig.key];
+        }
+
+        if (aValue < bValue) {
+          return sortConfig.direction === "ascending" ? -1 : 1;
+        }
+        if (aValue > bValue) {
+          return sortConfig.direction === "ascending" ? 1 : -1;
+        }
+        return 0;
+      });
+    } else {
+      // Default sort: non-"done" projects first, then by createdAt descending
+      sortableProjects.sort((a, b) => {
+        if (a.status === "done" && b.status !== "done") return 1;
+        if (a.status !== "done" && b.status === "done") return -1;
+        return b.createdAt.getTime() - a.createdAt.getTime();
+      });
+    }
+    return sortableProjects;
+  }, [filteredProjects, sortConfig]);
+
+  const requestSort = (key: keyof Project | "profit") => {
+    let direction: "ascending" | "descending" = "ascending";
+    if (
+      sortConfig &&
+      sortConfig.key === key &&
+      sortConfig.direction === "ascending"
+    ) {
+      direction = "descending";
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const getSortIcon = (key: keyof Project | "profit") => {
+    if (!sortConfig || sortConfig.key !== key) {
+      return null;
+    }
+    return sortConfig.direction === "ascending" ? (
+      <ArrowUpDown className="ml-2 h-4 w-4" />
+    ) : (
+      <ArrowUpDown className="ml-2 h-4 w-4 rotate-180" />
+    );
+  };
 
   return (
     <Card className="animate-slide-up shadow-card">
@@ -109,9 +215,9 @@ export function ReusableTable({
       </CardHeader>
       <CardContent>
         {/* Filters */}
-        {searchProjects && ( // Only show filters if searchProjects is provided
-          <div className="flex items-center space-x-4 animate-fade-in mb-4">
-            <div className="relative flex-1 max-w-md">
+        <div className="flex flex-wrap items-center gap-4 animate-fade-in mb-4">
+          {searchProjects && (
+            <div className="relative flex-grow max-w-sm">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
                 placeholder="Search projects..."
@@ -120,26 +226,93 @@ export function ReusableTable({
                 className="pl-10"
               />
             </div>
+          )}
 
-            <Select
-              value={statusFilter}
-              onValueChange={(value) =>
-                setStatusFilter(value as ProjectStatus | "all")
-              }
-            >
-              <SelectTrigger className="w-48">
+          <Select
+            value={statusFilter}
+            onValueChange={(value) =>
+              setStatusFilter(value as ProjectStatus | "all")
+            }
+          >
+            <SelectTrigger className="w-48">
+              <Filter className="mr-2 h-4 w-4" />
+              <SelectValue placeholder="Filter by status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="pending">Pending</SelectItem>
+              <SelectItem value="in-work">In Work</SelectItem>
+              <SelectItem value="done">Done</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select
+            value={financialFilter}
+            onValueChange={(value) => setFinancialFilter(value)}
+          >
+            <SelectTrigger className="w-48">
+              <Filter className="mr-2 h-4 w-4" />
+              <SelectValue placeholder="Filter by Financials" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Financials</SelectItem>
+              <SelectItem value="profit">Profit</SelectItem>
+              <SelectItem value="loss">Loss</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className="w-48 justify-start text-left font-normal"
+              >
                 <Filter className="mr-2 h-4 w-4" />
-                <SelectValue placeholder="Filter by status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="in-work">In Work</SelectItem>
-                <SelectItem value="done">Done</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        )}
+                Filter by Profit Range
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80">
+              <div className="grid gap-4">
+                <div className="space-y-2">
+                  <h4 className="font-medium leading-none">Profit Range</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Filter projects by their net profit.
+                  </p>
+                </div>
+                <div className="grid gap-2">
+                  <div className="grid grid-cols-3 items-center gap-4">
+                    <Label htmlFor="min-profit">Min</Label>
+                    <Input
+                      id="min-profit"
+                      type="number"
+                      value={minProfit}
+                      onChange={(e) =>
+                        setMinProfit(
+                          e.target.value === "" ? "" : Number(e.target.value)
+                        )
+                      }
+                      className="col-span-2 h-8"
+                    />
+                  </div>
+                  <div className="grid grid-cols-3 items-center gap-4">
+                    <Label htmlFor="max-profit">Max</Label>
+                    <Input
+                      id="max-profit"
+                      type="number"
+                      value={maxProfit}
+                      onChange={(e) =>
+                        setMaxProfit(
+                          e.target.value === "" ? "" : Number(e.target.value)
+                        )
+                      }
+                      className="col-span-2 h-8"
+                    />
+                  </div>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
 
         {data.length === 0 ? (
           <div className="text-center py-12">
@@ -158,14 +331,45 @@ export function ReusableTable({
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>ID</TableHead>
-                  <TableHead>Project Name</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead>
+                    <Button variant="ghost" onClick={() => requestSort("id")}>
+                      ID {getSortIcon("id")}
+                    </Button>
+                  </TableHead>
+                  <TableHead>
+                    <Button variant="ghost" onClick={() => requestSort("name")}>
+                      Project Name {getSortIcon("name")}
+                    </Button>
+                  </TableHead>
+                  <TableHead>
+                    <Button
+                      variant="ghost"
+                      onClick={() => requestSort("status")}
+                    >
+                      Status {getSortIcon("status")}
+                    </Button>
+                  </TableHead>
                   <TableHead>Contact</TableHead>
                   <TableHead>Contact Number</TableHead>
-                  <TableHead>Financial</TableHead>
-                  <TableHead>Created</TableHead>
-                  {showActions && <TableHead className="w-[100px]">Actions</TableHead>}
+                  <TableHead>
+                    <Button
+                      variant="ghost"
+                      onClick={() => requestSort("profit")}
+                    >
+                      Financial {getSortIcon("profit")}
+                    </Button>
+                  </TableHead>
+                  <TableHead>
+                    <Button
+                      variant="ghost"
+                      onClick={() => requestSort("createdAt")}
+                    >
+                      Created {getSortIcon("createdAt")}
+                    </Button>
+                  </TableHead>
+                  {showActions && (
+                    <TableHead className="w-[100px]">Actions</TableHead>
+                  )}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -177,7 +381,9 @@ export function ReusableTable({
                       key={project.id}
                       className="hover:bg-muted/50 transition-colors"
                     >
-                      <TableCell className="font-medium">{project.id}</TableCell>
+                      <TableCell className="font-medium">
+                        {project.id}
+                      </TableCell>
                       <TableCell>
                         <div>
                           <div className="font-medium">{project.name}</div>
@@ -219,7 +425,9 @@ export function ReusableTable({
                             </SelectContent>
                           </Select>
                         ) : (
-                          <Badge className={statusConfig[project.status].className}>
+                          <Badge
+                            className={statusConfig[project.status].className}
+                          >
                             {statusConfig[project.status].label}
                           </Badge>
                         )}
@@ -295,7 +503,9 @@ export function ReusableTable({
                                   )}
                                   {onDeleteProject && (
                                     <DropdownMenuItem
-                                      onClick={() => onDeleteProject(project.id)}
+                                      onClick={() =>
+                                        onDeleteProject(project.id)
+                                      }
                                       className="text-destructive"
                                     >
                                       <Trash2 className="mr-2 h-4 w-4" />

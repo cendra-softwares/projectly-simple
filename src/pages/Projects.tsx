@@ -1,13 +1,16 @@
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ReusableTable } from "@/components/ui/ReusableTable"; // Import ReusableTable
+import { ReusableTable } from "@/components/ui/ReusableTable";
+import { ProjectsGalleryView } from "@/components/ProjectsGalleryView";
+import { ProjectDetailView } from "@/components/ProjectDetailView";
 import { ProjectFormDialog } from "@/components/ProjectFormDialog";
 import { ProjectViewDialog } from "@/components/ProjectViewDialog";
 import { useProjects } from "@/hooks/useProjects";
 import { Project, ProjectStatus } from "@/types/project";
 import { toast } from "@/hooks/use-toast";
-import { useState } from "react"; // Keep useState for dialogs
+import { useState } from "react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 
 const Projects = () => {
   const { projects, deleteProject, addProject, updateProject, searchProjects } =
@@ -32,14 +35,15 @@ const Projects = () => {
     }
   };
 
-  // Dialog states
-  const [viewProject, setViewProject] = useState<Project | null>(null);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [editProject, setEditProject] = useState<Project | null>(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [currentView, setCurrentView] = useState<"table" | "gallery">("table");
 
   const handleViewProject = (project: Project) => {
-    setViewProject(project);
+    setSelectedProject(project);
   };
+
 
   const handleEditProject = (project: Project) => {
     setEditProject(project);
@@ -107,8 +111,7 @@ const Projects = () => {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
+    <div className="flex-1 flex flex-col space-y-6 p-6">
       <div className="flex items-center justify-between animate-fade-in">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Projects</h2>
@@ -116,34 +119,63 @@ const Projects = () => {
             Manage and track all your projects in one place.
           </p>
         </div>
-        <Button
-          onClick={handleNewProject}
-          className="gradient-primary text-white hover:opacity-90 transition-opacity"
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          New Project
-        </Button>
+        <div className="flex items-center space-x-4">
+          <Tabs value={currentView} onValueChange={(value) => setCurrentView(value as "table" | "gallery")} className="space-x-2">
+            <TabsList>
+              <TabsTrigger value="table">Table View</TabsTrigger>
+              <TabsTrigger value="gallery">Gallery View</TabsTrigger>
+            </TabsList>
+          </Tabs>
+          <Button
+            onClick={handleNewProject}
+            className="gradient-primary text-white hover:opacity-90 transition-opacity"
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            New Project
+          </Button>
+        </div>
       </div>
 
-      {/* Projects Table */}
-      <div className="space-y-4">
-        <ReusableTable
-          data={projects} // Pass all projects to ReusableTable
-          onViewProject={handleViewProject}
-          onEditProject={handleEditProject}
-          onDeleteProject={handleDeleteProject}
-          onCreateProject={handleNewProject}
-          onStatusChange={handleStatusChange}
-          showActions={true}
-          searchProjects={searchProjects} // Pass searchProjects function
-        />
-      </div>
+      <ResizablePanelGroup direction="horizontal" className="flex-1 rounded-lg border">
+        <ResizablePanel defaultSize={70} minSize={40}>
+          <div className="p-4 h-full">
+            <Tabs value={currentView} className="w-full h-full">
+              <TabsContent value="table" className="mt-0 h-full">
+                <ReusableTable
+                  data={projects}
+                  onViewProject={handleViewProject}
+                  onEditProject={handleEditProject}
+                  onDeleteProject={handleDeleteProject}
+                  onCreateProject={handleNewProject}
+                  onStatusChange={handleStatusChange}
+                  showActions={true}
+                  searchProjects={searchProjects}
+                />
+              </TabsContent>
+              <TabsContent value="gallery" className="mt-0 h-full">
+                <ProjectsGalleryView
+                  projects={projects}
+                  onViewProject={handleViewProject}
+                  onEditProject={handleEditProject}
+                  onDeleteProject={handleDeleteProject}
+                />
+              </TabsContent>
+            </Tabs>
+          </div>
+        </ResizablePanel>
+        <ResizableHandle withHandle />
+        <ResizablePanel defaultSize={30} minSize={25}>
+          <div className="p-4 h-full">
+            <ProjectDetailView project={selectedProject} />
+          </div>
+        </ResizablePanel>
+      </ResizablePanelGroup>
 
       {/* Dialogs */}
       <ProjectViewDialog
-        project={viewProject}
-        open={!!viewProject}
-        onOpenChange={(open) => !open && setViewProject(null)}
+        project={selectedProject}
+        open={!!selectedProject && currentView !== 'table' && currentView !== 'gallery'} // Only open if not in master-detail
+        onOpenChange={(open) => !open && setSelectedProject(null)}
       />
 
       <ProjectFormDialog

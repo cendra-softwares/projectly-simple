@@ -7,6 +7,7 @@ import {
   Search,
   Filter,
   ArrowUpDown,
+  X,
 } from "lucide-react";
 import {
   Table,
@@ -89,6 +90,57 @@ export function ReusableTable({
   const [financialFilter, setFinancialFilter] = useState<string | "all">("all");
   const [minProfit, setMinProfit] = useState<number | "">("");
   const [maxProfit, setMaxProfit] = useState<number | "">("");
+
+  const clearAllFilters = () => {
+    setSearchTerm("");
+    setStatusFilter("all");
+    setFinancialFilter("all");
+    setMinProfit("");
+    setMaxProfit("");
+  };
+
+  const activeFilters = useMemo(() => {
+    const filters: { id: string; label: string; value: string; type: string }[] = [];
+
+    if (searchTerm) {
+      filters.push({ id: "searchTerm", label: `Search: ${searchTerm}`, value: searchTerm, type: "search" });
+    }
+    if (statusFilter !== "all") {
+      filters.push({ id: "statusFilter", label: `Status: ${statusConfig[statusFilter].label}`, value: statusFilter, type: "status" });
+    }
+    if (financialFilter !== "all") {
+      filters.push({ id: "financialFilter", label: `Financial: ${financialFilter}`, value: financialFilter, type: "financial" });
+    }
+    if (minProfit !== "") {
+      filters.push({ id: "minProfit", label: `Min Profit: ${minProfit}`, value: String(minProfit), type: "minProfit" });
+    }
+    if (maxProfit !== "") {
+      filters.push({ id: "maxProfit", label: `Max Profit: ${maxProfit}`, value: String(maxProfit), type: "maxProfit" });
+    }
+    return filters;
+  }, [searchTerm, statusFilter, financialFilter, minProfit, maxProfit]);
+
+  const removeFilter = (id: string) => {
+    switch (id) {
+      case "searchTerm":
+        setSearchTerm("");
+        break;
+      case "statusFilter":
+        setStatusFilter("all");
+        break;
+      case "financialFilter":
+        setFinancialFilter("all");
+        break;
+      case "minProfit":
+        setMinProfit("");
+        break;
+      case "maxProfit":
+        setMaxProfit("");
+        break;
+      default:
+        break;
+    }
+  };
 
   const formatDate = (date: Date) => {
     return new Intl.DateTimeFormat("en-US", {
@@ -313,6 +365,37 @@ export function ReusableTable({
             </PopoverContent>
           </Popover>
         </div>
+
+        {/* Filter Chips */}
+        {(activeFilters.length > 0) && (
+          <div className="flex flex-wrap items-center gap-2 mb-4 animate-fade-in">
+            {activeFilters.map((filter) => (
+              <Badge
+                key={filter.id}
+                variant="secondary"
+                className="pr-1 flex items-center gap-1"
+              >
+                {filter.label}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-auto p-0 ml-1 text-xs"
+                  onClick={() => removeFilter(filter.id)}
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </Badge>
+            ))}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearAllFilters}
+              className="h-auto p-1 px-2 text-xs"
+            >
+              Clear All Filters
+            </Button>
+          </div>
+        )}
 
         {data.length === 0 ? (
           <div className="text-center py-12">

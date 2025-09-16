@@ -101,17 +101,6 @@ const Analytics = () => {
         <FinancialReportsTable />
       </section>
 
-      {/* All Projects Table */}
-      <section className="space-y-4">
-        <h3 className="text-2xl font-bold tracking-tight">
-          All Projects Overview
-        </h3>
-        <ReusableTable
-          data={projects}
-          showActions={false}
-          searchProjects={searchProjects}
-        />
-      </section>
     </div>
   );
 };

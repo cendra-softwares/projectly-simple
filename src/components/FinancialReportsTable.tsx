@@ -1,5 +1,4 @@
 import React, { useState, useMemo, useCallback, useEffect } from "react";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   useProjectFinancialReports,
   ProjectFinancialReport,
@@ -11,24 +10,8 @@ import {
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
-import { CalendarIcon } from "lucide-react";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { CalendarIcon, Download, FolderOpen, ArrowDownCircle, ArrowUpCircle, Scale } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import {
-  ArrowUpDown,
-  Download,
-  FolderOpen,
-  ArrowDownCircle,
-  ArrowUpCircle,
-  Scale,
-} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -42,6 +25,8 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { formatCurrency } from "@/lib/utils";
+import { ReusableTable } from "@/components/ui/ReusableTable";
+import { Project, ProjectStatus } from "@/types/project";
 
 export const FinancialReportsTable: React.FC = () => {
   const {
@@ -51,10 +36,6 @@ export const FinancialReportsTable: React.FC = () => {
     error,
   } = useProjectFinancialReports();
   const [filterText, setFilterText] = useState("");
-  const [sortConfig, setSortConfig] = useState<{
-    key: keyof ProjectFinancialReport | null;
-    direction: "ascending" | "descending";
-  }>({ key: null, direction: "ascending" });
   const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({});
   const [amountRange, setAmountRange] = useState<{ min: string; max: string }>({
     min: "",
@@ -66,85 +47,80 @@ export const FinancialReportsTable: React.FC = () => {
   const [showPdfPreview, setShowPdfPreview] = useState(false);
   const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null);
 
-  const filteredReports = useMemo(() => {
+  const mappedReports: Project[] = useMemo(() => {
     if (!reports) return [];
-    return reports.filter((report) => {
-      const matchesFilterText = report.project_name
-        .toLowerCase()
-        .includes(filterText.toLowerCase());
+    return reports.map((report) => ({
+      id: report.project_id,
+      user_id: "dummy_user_id", // Add dummy user_id to satisfy Project type
+      name: report.project_name,
+      description: `Expenses: ${formatCurrency(report.expenses)}, Profits: ${formatCurrency(report.profits)}`,
+      status: report.project_status as ProjectStatus,
+      contact: { name: "", email: "", phone: "", address: "" }, // Dummy contact data
+      financials: { expenses: report.expenses, profits: report.profits },
+      images: [],
+      createdAt: new Date(report.created_at),
+      updatedAt: new Date(report.created_at),
+    }));
+  }, [reports]);
 
-      const reportDate = new Date(report.created_at);
-      const matchesDateRange =
-        (!dateRange.from || reportDate >= dateRange.from) &&
-        (!dateRange.to || reportDate <= dateRange.to);
-
-      const reportNetProfit = report.net_profit;
-      const matchesAmountRange =
-        (!amountRange.min || reportNetProfit >= parseFloat(amountRange.min)) &&
-        (!amountRange.max || reportNetProfit <= parseFloat(amountRange.max));
-
-      return matchesFilterText && matchesDateRange && matchesAmountRange;
-    });
-  }, [reports, filterText, dateRange, amountRange]);
-
-  const sortedReports = useMemo(() => {
-    let sortableReports = [...filteredReports];
-    if (sortConfig.key) {
-      sortableReports.sort((a, b) => {
-        const aValue = a[sortConfig.key!];
-        const bValue = b[sortConfig.key!];
-
-        // Handle date sorting
-        if (sortConfig.key === "created_at") {
-          const dateA = new Date(a.created_at).getTime();
-          const dateB = new Date(b.created_at).getTime();
-          return sortConfig.direction === "ascending"
-            ? dateA - dateB
-            : dateB - dateA;
-        }
-
-        if (typeof aValue === "string" && typeof bValue === "string") {
-          return sortConfig.direction === "ascending"
-            ? aValue.localeCompare(bValue)
-            : bValue.localeCompare(aValue);
-        }
-        if (typeof aValue === "number" && typeof bValue === "number") {
-          return sortConfig.direction === "ascending"
-            ? aValue - bValue
-            : bValue - aValue;
-        }
-        return 0;
-      });
+  const searchFinancialReports = useCallback((term: string) => {
+    if (!term.trim()) {
+      return mappedReports;
     }
-    return sortableReports;
-  }, [filteredReports, sortConfig]);
+    return mappedReports.filter(
+      (report) =>
+        report.name.toLowerCase().includes(term.toLowerCase()) ||
+        report.id.toString().includes(term)
+    );
+  }, [mappedReports]);
+
+
+  const filteredReports = useMemo(() => {
+    let currentReports = searchFinancialReports(filterText);
+
+    const reportNetProfit = (report: Project) => report.financials.profits - report.financials.expenses;
+
+    // Date range filter
+    currentReports = currentReports.filter((report) => {
+      const reportDate = report.createdAt;
+      return (
+        (!dateRange.from || reportDate >= dateRange.from) &&
+        (!dateRange.to || reportDate <= dateRange.to)
+      );
+    });
+
+    // Amount range filter (net profit)
+    currentReports = currentReports.filter((report) => {
+      const netProfit = reportNetProfit(report);
+      return (
+        (!amountRange.min || netProfit >= parseFloat(amountRange.min)) &&
+        (!amountRange.max || netProfit <= parseFloat(amountRange.max))
+      );
+    });
+
+    return currentReports;
+  }, [mappedReports, filterText, dateRange, amountRange, searchFinancialReports]);
+
 
   const totalExpenses = useMemo(() => {
-    return filteredReports.reduce((sum, report) => sum + report.expenses, 0);
+    return filteredReports.reduce((sum, report) => sum + report.financials.expenses, 0);
   }, [filteredReports]);
 
   const totalProfits = useMemo(() => {
-    return filteredReports.reduce((sum, report) => sum + report.profits, 0);
+    return filteredReports.reduce((sum, report) => sum + report.financials.profits, 0);
   }, [filteredReports]);
 
   const handleDateSelect = useCallback((range: { from?: Date; to?: Date }) => {
     setDateRange(range);
   }, []);
 
-  const requestSort = (key: keyof ProjectFinancialReport) => {
-    let direction: "ascending" | "descending" = "ascending";
-    if (sortConfig.key === key && sortConfig.direction === "ascending") {
-      direction = "descending";
-    }
-    setSortConfig({ key, direction });
-  };
-
-  const generatePdfContent = (reportsToGenerate: ProjectFinancialReport[]) => {
+  const generatePdfContent = (reportsToGenerate: Project[]) => {
     const doc = new jsPDF();
     doc.setFontSize(18);
     doc.text("Financial Reports", 14, 22);
 
     const tableColumn = [
+      "Project ID",
       "Project Name",
       "Status",
       "Created At",
@@ -155,12 +131,15 @@ export const FinancialReportsTable: React.FC = () => {
     const tableRows: (string | number)[][] = [];
 
     reportsToGenerate.forEach((report) => {
+      const netProfit = report.financials.profits - report.financials.expenses;
       const reportData = [
-        report.project_name,
-        report.project_status,
-        formatCurrency(report.expenses),
-        formatCurrency(report.profits),
-        formatCurrency(report.net_profit),
+        report.id,
+        report.name,
+        report.status,
+        format(report.createdAt, "PPP"),
+        formatCurrency(report.financials.expenses),
+        formatCurrency(report.financials.profits),
+        formatCurrency(netProfit),
       ];
       tableRows.push(reportData);
     });
@@ -184,7 +163,7 @@ export const FinancialReportsTable: React.FC = () => {
         fillColor: "#f2f2f2",
       },
       didDrawCell: (data: any) => {
-        if (data.column.index === 5 && data.cell.section === "body") {
+        if (data.column.index === 6 && data.cell.section === "body") {
           // Net Profit column
           const netProfit = parseFloat(data.cell.text[0].replace("₹", ""));
           if (netProfit > 0) {
@@ -203,8 +182,8 @@ export const FinancialReportsTable: React.FC = () => {
   };
 
   const handlePreviewPdf = () => {
-    const reportsToPrint = sortedReports.filter((report) =>
-      selectedReports.has(report.project_id)
+    const reportsToPrint = filteredReports.filter((report) =>
+      selectedReports.has(report.id)
     );
 
     if (reportsToPrint.length === 0) {
@@ -244,6 +223,16 @@ export const FinancialReportsTable: React.FC = () => {
       <h2 className="text-2xl font-bold tracking-tight mb-6">
         Financial Reports
       </h2>
+      <div className="flex flex-col md:flex-row gap-4 mb-6">
+        <Button
+          onClick={handlePreviewPdf}
+          className="flex items-center gap-2 w-full md:w-auto"
+          disabled={selectedReports.size === 0}
+        >
+          <Download className="h-4 w-4" />
+          Preview PDF
+        </Button>
+      </div>
 
       <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 mb-6">
         <StatCard
@@ -278,7 +267,7 @@ export const FinancialReportsTable: React.FC = () => {
       <div className="flex flex-col md:flex-row gap-4 mb-6">
         <Input
           type="text"
-          placeholder="Filter by project name..."
+          placeholder="Filter by project name or ID..."
           value={filterText}
           onChange={(e) => setFilterText(e.target.value)}
           className="flex-1"
@@ -335,136 +324,13 @@ export const FinancialReportsTable: React.FC = () => {
           }
           className="w-full md:w-[180px]"
         />
-        <Button
-          onClick={handlePreviewPdf}
-          className="flex items-center gap-2 w-full md:w-auto"
-          disabled={selectedReports.size === 0}
-        >
-          <Download className="h-4 w-4" />
-          Preview PDF
-        </Button>
       </div>
 
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[50px] text-center">
-                <Checkbox
-                  checked={
-                    sortedReports.length > 0 &&
-                    selectedReports.size === sortedReports.length
-                  }
-                  onCheckedChange={(checked) => {
-                    if (checked) {
-                      const allProjectIds = new Set(
-                        sortedReports.map((report) => report.project_id)
-                      );
-                      setSelectedReports(allProjectIds);
-                    } else {
-                      setSelectedReports(new Set());
-                    }
-                  }}
-                />
-              </TableHead>
-              <TableHead>
-                <Button
-                  variant="ghost"
-                  onClick={() => requestSort("project_name")}
-                >
-                  Project Name
-                  <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
-              </TableHead>
-              <TableHead>
-                <Button
-                  variant="ghost"
-                  onClick={() => requestSort("project_status")}
-                >
-                  Status
-                  <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
-              </TableHead>
-              <TableHead>
-                <Button
-                  variant="ghost"
-                  onClick={() => requestSort("created_at")}
-                >
-                  Created At
-                  <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
-              </TableHead>
-              <TableHead>
-                <Button variant="ghost" onClick={() => requestSort("expenses")}>
-                  Expenses
-                  <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
-              </TableHead>
-              <TableHead>
-                <Button variant="ghost" onClick={() => requestSort("profits")}>
-                  Profits
-                  <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
-              </TableHead>
-              <TableHead>
-                <Button
-                  variant="ghost"
-                  onClick={() => requestSort("net_profit")}
-                >
-                  Net Profit
-                  <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {sortedReports.length > 0 ? (
-              sortedReports.map((report) => (
-                <TableRow key={report.project_id}>
-                  <TableCell className="text-center">
-                    <Checkbox
-                      checked={selectedReports.has(report.project_id)}
-                      onCheckedChange={(checked) => {
-                        setSelectedReports((prevSelected) => {
-                          const newSelected = new Set(prevSelected);
-                          if (checked) {
-                            newSelected.add(report.project_id);
-                          } else {
-                            newSelected.delete(report.project_id);
-                          }
-                          return newSelected;
-                        });
-                      }}
-                    />
-                  </TableCell>
-                  <TableCell className="font-medium">
-                    {report.project_name}
-                  </TableCell>
-                  <TableCell>{report.project_status}</TableCell>
-                  <TableCell>
-                    {format(new Date(report.created_at), "PPP")}
-                  </TableCell>
-                  <TableCell>{formatCurrency(report.expenses)}</TableCell>
-                  <TableCell>{formatCurrency(report.profits)}</TableCell>
-                  <TableCell
-                    className={
-                      report.net_profit > 0 ? "text-green-600" : "text-red-600"
-                    }
-                  >
-                    {formatCurrency(report.net_profit)}
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={7} className="h-24 text-center">
-                  No financial reports found.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
+      <ReusableTable
+        data={filteredReports}
+        showActions={false}
+        searchProjects={searchFinancialReports}
+      />
 
       <Dialog open={showPdfPreview} onOpenChange={setShowPdfPreview}>
         <DialogContent className="max-w-4xl h-[90vh] flex flex-col">

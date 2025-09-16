@@ -3,17 +3,20 @@ import { StatCard } from "@/components/StatCard";
 import { useProjects } from "@/hooks/useProjects";
 import { ProjectStatusPieChart } from "@/components/ProjectStatusPieChart";
 import { ProjectProgressChart } from "@/components/ProjectProgressChart";
-import { ReusableTable } from "@/components/ui/ReusableTable";
+import { AnalyticsTable } from "@/components/AnalyticsTable";
 import { FinancialSummary } from "@/components/FinancialSummary";
 import { FinancialsDonutChart } from "@/components/FinancialsDonutChart";
 import { NetProfitTrendChart } from "@/components/NetProfitTrendChart";
-import { FinancialReportsTable } from "@/components/FinancialReportsTable";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState } from "react";
+import { Project } from "@/types/project";
 
 const Analytics = () => {
   const { projects, stats, projectHistory, loading, error, searchProjects } =
     useProjects();
+  const [selectedProjects, setSelectedProjects] = useState<Project[]>([]);
+  const [includeRingCharts, setIncludeRingCharts] = useState(true);
 
   if (loading) {
     return (
@@ -96,11 +99,23 @@ const Analytics = () => {
 
       <Separator />
 
-      {/* Financial Reports Table */}
+      {/* Analytics Table */}
       <section className="space-y-4">
-        <FinancialReportsTable />
+        <h3 className="text-2xl font-bold tracking-tight">Project Data</h3>
+        <AnalyticsTable
+          data={projects}
+          searchProjects={searchProjects}
+          onSelectedRecordsChange={setSelectedProjects}
+          selectedProjects={selectedProjects}
+          includeRingCharts={includeRingCharts}
+          onIncludeRingChartsChange={setIncludeRingCharts}
+        />
+        {selectedProjects.length > 0 && (
+          <div className="text-sm text-muted-foreground">
+            {selectedProjects.length} projects selected.
+          </div>
+        )}
       </section>
-
     </div>
   );
 };

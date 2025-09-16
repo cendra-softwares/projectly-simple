@@ -17,6 +17,7 @@ import Projects from "./pages/Projects";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import Analytics from "./pages/Analytics";
+import Settings from "./pages/Settings"; // Import the new Settings page
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AuthProvider, useAuth } from "./hooks/useAuth";
 import { useIsMobile } from "./hooks/use-mobile";
@@ -50,12 +51,14 @@ const AppLayout = () => {
             {isMobile && <SidebarTrigger className="mr-4" />} {/* Only show trigger on mobile */}
             <h1 className="text-lg font-semibold">Project Management Dashboard</h1>
           </div>
+          <img src="/Logo.png" alt="Company Logo" className="h-8 w-auto" /> {/* Added logo */}
         </header>
         <div className={`flex-1 p-6 ${isMobile && openMobile ? "ml-64" : ""}`}> {/* Adjust padding for mobile when sidebar is open */}
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/projects" element={<Projects />} />
             <Route path="/analytics" element={<Analytics />} />
+            <Route path="/settings" element={<Settings />} /> {/* New route for settings page */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </div>

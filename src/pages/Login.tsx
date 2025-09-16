@@ -1,45 +1,56 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { useAuth } from '@/hooks/useAuth'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { toast } from '@/hooks/use-toast'
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { toast } from "@/hooks/use-toast";
 
 const Login = () => {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [loading, setLoading] = useState(false)
-  const { signIn } = useAuth()
-  const navigate = useNavigate()
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const { signIn } = useAuth();
+  const navigate = useNavigate();
 
   const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
+    e.preventDefault();
+    setLoading(true);
     try {
-      await signIn(email, password)
+      await signIn(email, password);
       toast({
-        title: 'Login Successful',
-        description: 'You have been successfully logged in.',
-      })
-      navigate('/')
+        title: "Login Successful",
+        description: "You have been successfully logged in.",
+      });
+      navigate("/");
     } catch (error: any) {
       toast({
-        title: 'Login Failed',
-        description: error.message || 'An unexpected error occurred.',
-        variant: 'destructive',
-      })
+        title: "Login Failed",
+        description: error.message || "An unexpected error occurred.",
+        variant: "destructive",
+      });
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <div className="flex items-center justify-center min-h-screen w-full bg-gray-100 dark:bg-gray-900 px-4 py-8">
       <Card className="w-full max-w-sm sm:max-w-md lg:max-w-lg">
+        <div className="flex justify-center mt-4 mb-4">
+          <img src="/Logo.png" alt="Company Logo" className="h-16" />
+        </div>
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl text-center">Login to your account</CardTitle>
+          <CardTitle className="text-2xl text-center">
+            Login to your account
+          </CardTitle>
           <CardDescription className="text-center">
             Enter your email and password below to access your projects
           </CardDescription>
@@ -68,13 +79,13 @@ const Login = () => {
               />
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Logging in...' : 'Login'}
+              {loading ? "Logging in..." : "Login"}
             </Button>
           </form>
         </CardContent>
       </Card>
     </div>
-  )
-}
+  );
+};
 
-export default Login
+export default Login;

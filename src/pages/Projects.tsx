@@ -104,6 +104,14 @@ const Projects = () => {
           title: "Project Updated",
           description: `${projectData.name} has been updated successfully.`,
         });
+
+        // If the updated project was the selected project, update selectedProject to reflect changes
+        if (selectedProject && selectedProject.id === id) {
+          const updatedProject = projects.find((p) => p.id === id);
+          if (updatedProject) {
+            setSelectedProject(updatedProject);
+          }
+        }
       } catch (error: any) {
         console.error("Error updating project:", error);
         toast({

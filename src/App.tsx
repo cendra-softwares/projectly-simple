@@ -18,9 +18,11 @@ import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import Analytics from "./pages/Analytics";
 import Settings from "./pages/Settings"; // Import the new Settings page
+import Profile from "./pages/Profile"; // Import the new Profile page
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AuthProvider, useAuth } from "./hooks/useAuth";
 import { useIsMobile } from "./hooks/use-mobile";
+import { ExpiredOverlay } from './components/ExpiredOverlay';
 
 const queryClient = new QueryClient();
 
@@ -59,6 +61,7 @@ const AppLayout = () => {
             <Route path="/projects" element={<Projects />} />
             <Route path="/analytics" element={<Analytics />} />
             <Route path="/settings" element={<Settings />} /> {/* New route for settings page */}
+            <Route path="/profile" element={<Profile />} /> {/* New route for profile page */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </div>
@@ -81,10 +84,13 @@ const AppContent = () => {
   }
 
   return (
-    <Routes>
-      <Route path="/login" element={<Login />} />
-      <Route path="/*" element={<ProtectedRoute><AppLayout /></ProtectedRoute>} />
-    </Routes>
+    <>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/*" element={<ProtectedRoute><AppLayout /></ProtectedRoute>} />
+      </Routes>
+      <ExpiredOverlay />
+    </>
   );
 };
 

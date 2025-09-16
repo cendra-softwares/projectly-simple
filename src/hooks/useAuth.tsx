@@ -1,10 +1,12 @@
-import { createContext, useContext, useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
-import { User, Session } from '@supabase/supabase-js'
+import { createContext, useContext, useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
+import { User, Session } from "@supabase/supabase-js";
 
 interface Profile {
   id: string;
   username: string;
+  expiry_date: string | null;
+  status: "active" | "trial" | "expired";
 }
 
 interface AuthContextType {
@@ -12,11 +14,12 @@ interface AuthContextType {
   session: Session | null;
   loading: boolean;
   profile: Profile | null;
-  signIn: (email: string, password: string) => Promise<void>
-  signOut: () => Promise<void>
+  isAccountExpired: boolean;
+  signIn: (email: string, password: string) => Promise<void>;
+  signOut: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined)
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -27,15 +30,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const getProfile = async (userId: string) => {
     try {
       const { data, error } = await supabase
-        .from('profiles')
-        .select('id, username')
-        .eq('id', userId)
+        .from("profiles")
+        .select("id, username, expiry_date, status")
+        .eq("id", userId)
         .single();
 
       if (error) throw error;
       setProfile(data);
     } catch (error) {
-      console.error('Error fetching profile:', error);
+      console.error("Error fetching profile:", error);
       setProfile(null);
     }
   };
@@ -65,8 +68,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     });
 
-    return () => subscription.unsubscribe()
-  }, [])
+    return () => subscription.unsubscribe();
+  }, []);
 
   const signIn = async (email: string, password: string) => {
     setLoading(true);
@@ -82,7 +85,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setSession(data.session);
         setUser(data.session.user);
       } else {
-        throw new Error('Sign-in successful, but no session returned.');
+        throw new Error("Sign-in successful, but no session returned.");
       }
     } finally {
       setLoading(false);
@@ -99,26 +102,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const isAccountExpired = profile
+    ? profile.status !== "active" &&
+      (profile.status === "expired" ||
+        (profile.expiry_date && new Date(profile.expiry_date) < new Date()))
+    : false;
+
   const value: AuthContextType = {
     user,
     session,
     loading,
     profile,
+    isAccountExpired,
     signIn,
     signOut,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  )
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export const useAuth = () => {
-  const context = useContext(AuthContext)
+  const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider')
+    throw new Error("useAuth must be used within an AuthProvider");
   }
-  return context
-}
+  return context;
+};

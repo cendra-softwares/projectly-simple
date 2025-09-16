@@ -1,19 +1,19 @@
-import {
-  BarChart3,
-  FolderOpen,
-  Clock,
-  CheckCircle,
-  Loader2,
-} from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { FolderOpen, Clock, CheckCircle, Loader2 } from "lucide-react";
 import { StatCard } from "@/components/StatCard";
 import { useProjects } from "@/hooks/useProjects";
 import { ProjectStatusPieChart } from "@/components/ProjectStatusPieChart";
 import { ProjectProgressChart } from "@/components/ProjectProgressChart";
-import { ReusableTable } from "@/components/ui/ReusableTable"; // Use ReusableTable
+import { ReusableTable } from "@/components/ui/ReusableTable";
+import { FinancialSummary } from "@/components/FinancialSummary";
+import { FinancialsDonutChart } from "@/components/FinancialsDonutChart";
+import { NetProfitTrendChart } from "@/components/NetProfitTrendChart";
+import { FinancialReportsTable } from "@/components/FinancialReportsTable";
+import { Separator } from "@/components/ui/separator";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const Analytics = () => {
-  const { projects, stats, projectHistory, loading, error, searchProjects } = useProjects();
+  const { projects, stats, projectHistory, loading, error, searchProjects } =
+    useProjects();
 
   if (loading) {
     return (
@@ -33,19 +33,19 @@ const Analytics = () => {
   }
 
   return (
-    <div className="space-y-8">
-      {/* Header Section */}
+    <div className="flex-1 space-y-8 p-6">
       <div className="animate-fade-in">
         <h2 className="text-3xl font-bold tracking-tight">
-          Analytics Overview
+          Analytics & Reports
         </h2>
         <p className="text-muted-foreground">
-          Detailed insights into your project performance.
+          Comprehensive insights into your project performance and financial
+          reports.
         </p>
       </div>
 
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+      {/* Project Status Statistics */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Total Projects"
           value={stats.total}
@@ -62,7 +62,7 @@ const Analytics = () => {
         <StatCard
           title="Pending"
           value={stats.pending}
-          icon={BarChart3}
+          icon={Clock}
           variant="pending"
           className="animate-fade-in"
         />
@@ -75,14 +75,43 @@ const Analytics = () => {
         />
       </div>
 
-      {/* Charts and Graphs */}
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <ProjectProgressChart data={projectHistory} />
-        <ProjectStatusPieChart stats={stats} />
+      <Separator />
+
+      {/* Financial Overview and Trend */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-1">
+          <FinancialSummary projects={projects} />
+        </div>
+        <div className="lg:col-span-2">
+          <NetProfitTrendChart projects={projects} />
+        </div>
       </div>
 
-      {/* Detailed Project Metrics */}
-      <ReusableTable data={projects} showActions={false} searchProjects={searchProjects} />
+      {/* Project Progress, Status Breakdown, and Financial Distribution */}
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <ProjectProgressChart data={projectHistory} />
+        <ProjectStatusPieChart stats={stats} />
+        <FinancialsDonutChart projects={projects} />
+      </div>
+
+      <Separator />
+
+      {/* Financial Reports Table */}
+      <section className="space-y-4">
+        <FinancialReportsTable />
+      </section>
+
+      {/* All Projects Table */}
+      <section className="space-y-4">
+        <h3 className="text-2xl font-bold tracking-tight">
+          All Projects Overview
+        </h3>
+        <ReusableTable
+          data={projects}
+          showActions={false}
+          searchProjects={searchProjects}
+        />
+      </section>
     </div>
   );
 };

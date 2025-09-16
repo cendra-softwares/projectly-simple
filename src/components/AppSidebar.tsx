@@ -21,7 +21,6 @@ const navigationItems = [
   { title: "Dashboard", url: "/", icon: Home },
   { title: "Projects", url: "/projects", icon: FolderOpen },
   { title: "Analytics", url: "/analytics", icon: BarChart3 },
-  { title: "Reports", url: "/reports", icon: PieChart },
   { title: "Settings", url: "/settings", icon: Settings },
 ]
 

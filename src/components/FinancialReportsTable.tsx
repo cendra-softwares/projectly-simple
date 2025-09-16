@@ -1,12 +1,4 @@
 import React, { useState, useMemo, useCallback, useEffect } from "react";
-import {
-  PieChart,
-  Pie,
-  Cell,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from "recharts";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   useProjectFinancialReports,
@@ -49,9 +41,9 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { formatCurrency } from "@/lib/utils"; // Import the utility function
+import { formatCurrency } from "@/lib/utils";
 
-const Reports: React.FC = () => {
+export const FinancialReportsTable: React.FC = () => {
   const {
     data: reports,
     isLoading,
@@ -135,11 +127,6 @@ const Reports: React.FC = () => {
     return filteredReports.reduce((sum, report) => sum + report.profits, 0);
   }, [filteredReports]);
 
-  const chartData = [
-    { name: "Total Expenses", value: totalExpenses, color: "#FF8042" },
-    { name: "Total Profits", value: totalProfits, color: "#00C49F" },
-  ];
-
   const handleDateSelect = useCallback((range: { from?: Date; to?: Date }) => {
     setDateRange(range);
   }, []);
@@ -171,7 +158,6 @@ const Reports: React.FC = () => {
       const reportData = [
         report.project_name,
         report.project_status,
-        format(new Date(report.created_at), "PPP"),
         formatCurrency(report.expenses),
         formatCurrency(report.profits),
         formatCurrency(report.net_profit),
@@ -254,147 +240,109 @@ const Reports: React.FC = () => {
   if (isError) return <div>Error: {error?.message}</div>;
 
   return (
-    <div className="container mx-auto py-10">
-      <h1 className="text-3xl font-bold mb-6">Financial Reports</h1>
+    <div className="space-y-6">
+      <h2 className="text-2xl font-bold tracking-tight mb-6">
+        Financial Reports
+      </h2>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-        <div className="rounded-md border p-4">
-          <h2 className="text-lg font-semibold mb-4">Financial Overview</h2>
-          {totalExpenses > 0 || totalProfits > 0 ? (
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={chartData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  outerRadius={100}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {chartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  formatter={(value) => formatCurrency(value as number)}
-                />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="text-center text-muted-foreground">
-              No data for chart.
-            </div>
-          )}
-        </div>
-        <div className="grid gap-4 grid-cols-2">
-          <StatCard
-            title="Total Projects"
-            value={filteredReports.length}
-            icon={FolderOpen}
-            className="animate-fade-in"
-          />
-          <StatCard
-            title="Total Expenses"
-            value={formatCurrency(totalExpenses)}
-            icon={ArrowDownCircle}
-            variant="in-work"
-            className="animate-fade-in"
-          />
-          <StatCard
-            title="Total Profits"
-            value={formatCurrency(totalProfits)}
-            icon={ArrowUpCircle}
-            variant="done"
-            className="animate-fade-in"
-          />
-          <StatCard
-            title="Net Profit"
-            value={formatCurrency(totalProfits - totalExpenses)}
-            icon={Scale}
-            variant={totalProfits - totalExpenses > 0 ? "done" : "pending"}
-            className="animate-fade-in"
-          />
-        </div>
+      <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 mb-6">
+        <StatCard
+          title="Total Reports"
+          value={filteredReports.length}
+          icon={FolderOpen}
+          className="animate-fade-in"
+        />
+        <StatCard
+          title="Total Expenses"
+          value={formatCurrency(totalExpenses)}
+          icon={ArrowDownCircle}
+          variant="in-work"
+          className="animate-fade-in"
+        />
+        <StatCard
+          title="Total Profits"
+          value={formatCurrency(totalProfits)}
+          icon={ArrowUpCircle}
+          variant="done"
+          className="animate-fade-in"
+        />
+        <StatCard
+          title="Net Profit"
+          value={formatCurrency(totalProfits - totalExpenses)}
+          icon={Scale}
+          variant={totalProfits - totalExpenses > 0 ? "done" : "pending"}
+          className="animate-fade-in"
+        />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-        <div className="flex flex-col gap-4">
-          <Input
-            type="text"
-            placeholder="Filter by project name..."
-            value={filterText}
-            onChange={(e) => setFilterText(e.target.value)}
-            className="max-w-full"
-          />
-          {/* Stack filters vertically on mobile, then go horizontal on larger screens */}
-          <div className="flex flex-col sm:flex-row gap-4">
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant={"outline"}
-                  className={`w-full justify-start text-left font-normal ${
-                    !dateRange.from ? "text-muted-foreground" : ""
-                  }`}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {dateRange.from ? (
-                    dateRange.to ? (
-                      <>
-                        {format(dateRange.from, "LLL dd, y")} -{" "}
-                        {format(dateRange.to, "LLL dd, y")}
-                      </>
-                    ) : (
-                      format(dateRange.from, "LLL dd, y")
-                    )
-                  ) : (
-                    <span>Pick a date range</span>
-                  )}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  initialFocus
-                  mode="range"
-                  defaultMonth={dateRange.from}
-                  selected={dateRange as any}
-                  onSelect={handleDateSelect as any}
-                  numberOfMonths={2}
-                />
-              </PopoverContent>
-            </Popover>
-            <Input
-              type="number"
-              placeholder="Min Amount (Net Profit)"
-              value={amountRange.min}
-              onChange={(e) =>
-                setAmountRange({ ...amountRange, min: e.target.value })
-              }
-              className="w-full"
+      <div className="flex flex-col md:flex-row gap-4 mb-6">
+        <Input
+          type="text"
+          placeholder="Filter by project name..."
+          value={filterText}
+          onChange={(e) => setFilterText(e.target.value)}
+          className="flex-1"
+        />
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant={"outline"}
+              className={`w-full md:w-[240px] justify-start text-left font-normal ${
+                !dateRange.from ? "text-muted-foreground" : ""
+              }`}
+            >
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {dateRange.from ? (
+                dateRange.to ? (
+                  <>
+                    {format(dateRange.from, "LLL dd, y")} -{" "}
+                    {format(dateRange.to, "LLL dd, y")}
+                  </>
+                ) : (
+                  format(dateRange.from, "LLL dd, y")
+                )
+              ) : (
+                <span>Pick a date range</span>
+              )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <Calendar
+              initialFocus
+              mode="range"
+              defaultMonth={dateRange.from}
+              selected={dateRange as any}
+              onSelect={handleDateSelect as any}
+              numberOfMonths={2}
             />
-            <Input
-              type="number"
-              placeholder="Max Amount (Net Profit)"
-              value={amountRange.max}
-              onChange={(e) =>
-                setAmountRange({ ...amountRange, max: e.target.value })
-              }
-              className="w-full"
-            />
-          </div>
-        </div>
-
-        <div className="flex items-center justify-end">
-          <Button
-            onClick={handlePreviewPdf}
-            className="flex items-center gap-2"
-            disabled={selectedReports.size === 0}
-          >
-            <Download className="h-4 w-4" />
-            Preview PDF
-          </Button>
-        </div>
+          </PopoverContent>
+        </Popover>
+        <Input
+          type="number"
+          placeholder="Min Amount (Net Profit)"
+          value={amountRange.min}
+          onChange={(e) =>
+            setAmountRange({ ...amountRange, min: e.target.value })
+          }
+          className="w-full md:w-[180px]"
+        />
+        <Input
+          type="number"
+          placeholder="Max Amount (Net Profit)"
+          value={amountRange.max}
+          onChange={(e) =>
+            setAmountRange({ ...amountRange, max: e.target.value })
+          }
+          className="w-full md:w-[180px]"
+        />
+        <Button
+          onClick={handlePreviewPdf}
+          className="flex items-center gap-2 w-full md:w-auto"
+          disabled={selectedReports.size === 0}
+        >
+          <Download className="h-4 w-4" />
+          Preview PDF
+        </Button>
       </div>
 
       <div className="rounded-md border">
@@ -547,5 +495,3 @@ const Reports: React.FC = () => {
     </div>
   );
 };
-
-export default Reports;

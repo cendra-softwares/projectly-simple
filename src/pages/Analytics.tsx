@@ -10,10 +10,10 @@ import { StatCard } from "@/components/StatCard";
 import { useProjects } from "@/hooks/useProjects";
 import { ProjectStatusPieChart } from "@/components/ProjectStatusPieChart";
 import { ProjectProgressChart } from "@/components/ProjectProgressChart";
-import { DetailedProjectsTable } from "@/components/DetailedProjectsTable";
+import { ReusableTable } from "@/components/ui/ReusableTable"; // Use ReusableTable
 
 const Analytics = () => {
-  const { projects, stats, projectHistory, loading, error } = useProjects();
+  const { projects, stats, projectHistory, loading, error, searchProjects } = useProjects();
 
   if (loading) {
     return (
@@ -82,7 +82,7 @@ const Analytics = () => {
       </div>
 
       {/* Detailed Project Metrics */}
-      <DetailedProjectsTable projects={projects} />
+      <ReusableTable data={projects} showActions={false} searchProjects={searchProjects} />
     </div>
   );
 };

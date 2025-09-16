@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQueryClient } from '@tanstack/react-query';
+import Fuse from "fuse.js"; // Import Fuse.js
 import { Project, ProjectStats } from "@/types/project";
 import { supabase } from "@/lib/supabase";
 
@@ -125,6 +126,28 @@ export function useProjects() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const fuse = useMemo(() => {
+    return new Fuse(projects, {
+      keys: [
+        "name",
+        "description",
+        "contact.name",
+        "contact.email",
+        "contact.phone",
+        "financials.expenses",
+        "financials.profits",
+      ],
+      threshold: 0.3, // Adjust threshold for fuzziness
+    });
+  }, [projects]);
+
+  const searchProjects = (term: string) => {
+    if (!term.trim()) {
+      return projects;
+    }
+    return fuse.search(term).map((result) => result.item);
   };
 
   const stats: ProjectStats = {
@@ -422,5 +445,6 @@ export function useProjects() {
     deleteProject,
     getProject,
     refetch: fetchProjects,
+    searchProjects, // Expose searchProjects
   };
 }

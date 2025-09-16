@@ -1,6 +1,6 @@
 import { BarChart3, FolderOpen, Clock, CheckCircle, ArrowDownCircle, ArrowUpCircle, Scale } from "lucide-react";
 import { StatCard } from "@/components/StatCard";
-import { ProjectsTable } from "@/components/ProjectsTable";
+import { ReusableTable } from "@/components/ui/ReusableTable"; // Use ReusableTable
 import { ProjectStatusChart } from "@/components/ProjectStatusChart";
 import { ProjectProgressOverview } from "@/components/ProjectProgressOverview";
 import { QuickActions } from "@/components/QuickActions";
@@ -15,7 +15,7 @@ import { formatCurrency } from "@/lib/utils"; // Import the utility function
 import { Separator } from "@/components/ui/separator"; // Import Separator
 
 const Dashboard = () => {
-  const { projects, stats, deleteProject, addProject, updateProject } =
+  const { projects, stats, deleteProject, addProject, updateProject, searchProjects } =
     useProjects();
   const { data: financialReports } = useProjectFinancialReports();
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
@@ -187,13 +187,15 @@ const Dashboard = () => {
           </p>
         </div>
 
-        <ProjectsTable
-          projects={recentProjects}
+        <ReusableTable
+          data={recentProjects}
           onViewProject={handleViewProject}
           onEditProject={handleEditProject}
           onDeleteProject={handleDeleteProject}
           onCreateProject={() => setShowCreateDialog(true)}
-          onStatusChange={handleStatusChange} // Pass the new handler
+          onStatusChange={handleStatusChange}
+          showActions={true}
+          searchProjects={searchProjects} // Pass the searchProjects function
         />
       </div>
 

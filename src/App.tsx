@@ -7,11 +7,7 @@ import { SidebarProvider, SidebarTrigger, useSidebar } from "@/components/ui/sid
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { AppSidebar } from "@/components/AppSidebar";
 import { Button } from "@/components/ui/button";
-import { ProjectFormDialog } from "@/components/ProjectFormDialog";
-import { useProjects } from "@/hooks/useProjects";
-import { toast } from "@/hooks/use-toast";
-import { Plus } from "lucide-react";
-import { useState } from "react";
+import { ProjectCreationButtonAndDialog } from "@/components/ProjectCreationButtonAndDialog";
 import Dashboard from "./pages/Dashboard";
 import Projects from "./pages/Projects";
 import NotFound from "./pages/NotFound";
@@ -27,22 +23,8 @@ import { ExpiredOverlay } from './components/ExpiredOverlay';
 const queryClient = new QueryClient();
 
 const AppLayout = () => {
-  const { addProject } = useProjects();
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const { user, loading } = useAuth();
   const isMobile = useIsMobile();
   const { openMobile } = useSidebar(); // Get openMobile state from sidebar context
-
-  const showAddProjectButton = user && !loading;
-
-  const handleCreateProject = (projectData: any) => {
-    addProject(projectData);
-    setShowCreateDialog(false);
-    toast({
-      title: "Project Created",
-      description: `${projectData.name} has been created successfully.`,
-    });
-  };
 
   return (
     <div className="flex min-h-screen w-full">
@@ -54,6 +36,7 @@ const AppLayout = () => {
             <h1 className="text-lg font-semibold">Project Management Dashboard</h1>
           </div>
           <img src="/Logo.png" alt="Company Logo" className="h-8 w-auto" /> {/* Added logo */}
+          <ProjectCreationButtonAndDialog />
         </header>
         <div className={`flex-1 p-6 ${isMobile && openMobile ? "ml-64" : ""}`}> {/* Adjust padding for mobile when sidebar is open */}
           <Routes>
@@ -66,12 +49,6 @@ const AppLayout = () => {
           </Routes>
         </div>
       </main>
-      <ProjectFormDialog
-        open={showCreateDialog}
-        onOpenChange={setShowCreateDialog}
-        onSubmit={handleCreateProject}
-        mode="create"
-      />
     </div>
   );
 };

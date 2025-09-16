@@ -5,7 +5,7 @@ import { User, Session } from "@supabase/supabase-js";
 interface Profile {
   id: string;
   username: string;
-  expiry_date: string | null;
+  expiry_date: Date | null;
   status: "active" | "trial" | "expired";
 }
 
@@ -36,7 +36,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .single();
 
       if (error) throw error;
-      setProfile(data);
+      setProfile(data ? { ...data, expiry_date: data.expiry_date ? new Date(data.expiry_date) : null } : null);
     } catch (error) {
       console.error("Error fetching profile:", error);
       setProfile(null);
@@ -105,7 +105,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const isAccountExpired = profile
     ? profile.status !== "active" &&
       (profile.status === "expired" ||
-        (profile.expiry_date && new Date(profile.expiry_date) < new Date()))
+        (profile.expiry_date && profile.expiry_date < new Date()))
     : false;
 
   const value: AuthContextType = {

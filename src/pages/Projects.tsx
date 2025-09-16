@@ -10,7 +10,11 @@ import { Project, ProjectStatus } from "@/types/project";
 import { toast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
+import {
+  ResizablePanelGroup,
+  ResizablePanel,
+  ResizableHandle,
+} from "@/components/ui/resizable";
 
 const Projects = () => {
   const { projects, deleteProject, addProject, updateProject, searchProjects } =
@@ -38,12 +42,13 @@ const Projects = () => {
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [editProject, setEditProject] = useState<Project | null>(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [currentView, setCurrentView] = useState<"table" | "gallery">("table");
+  const [currentView, setCurrentView] = useState<"table" | "gallery">(
+    "gallery"
+  );
 
   const handleViewProject = (project: Project) => {
     setSelectedProject(project);
   };
-
 
   const handleEditProject = (project: Project) => {
     setEditProject(project);
@@ -120,7 +125,13 @@ const Projects = () => {
           </p>
         </div>
         <div className="flex items-center space-x-4">
-          <Tabs value={currentView} onValueChange={(value) => setCurrentView(value as "table" | "gallery")} className="space-x-2">
+          <Tabs
+            value={currentView}
+            onValueChange={(value) =>
+              setCurrentView(value as "table" | "gallery")
+            }
+            className="space-x-2"
+          >
             <TabsList>
               <TabsTrigger value="table">Table View</TabsTrigger>
               <TabsTrigger value="gallery">Gallery View</TabsTrigger>
@@ -136,7 +147,10 @@ const Projects = () => {
         </div>
       </div>
 
-      <ResizablePanelGroup direction="horizontal" className="flex-1 rounded-lg border">
+      <ResizablePanelGroup
+        direction="horizontal"
+        className="flex-1 rounded-lg border"
+      >
         <ResizablePanel defaultSize={70} minSize={40}>
           <div className="p-4 h-full">
             <Tabs value={currentView} className="w-full h-full">
@@ -158,6 +172,7 @@ const Projects = () => {
                   onViewProject={handleViewProject}
                   onEditProject={handleEditProject}
                   onDeleteProject={handleDeleteProject}
+                  searchProjects={searchProjects}
                 />
               </TabsContent>
             </Tabs>
@@ -174,7 +189,11 @@ const Projects = () => {
       {/* Dialogs */}
       <ProjectViewDialog
         project={selectedProject}
-        open={!!selectedProject && currentView !== 'table' && currentView !== 'gallery'} // Only open if not in master-detail
+        open={
+          !!selectedProject &&
+          currentView !== "table" &&
+          currentView !== "gallery"
+        } // Only open if not in master-detail
         onOpenChange={(open) => !open && setSelectedProject(null)}
       />
 

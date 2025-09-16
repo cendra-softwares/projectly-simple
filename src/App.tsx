@@ -17,7 +17,6 @@ import Projects from "./pages/Projects";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import Analytics from "./pages/Analytics";
-import Reports from "./pages/Reports";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AuthProvider, useAuth } from "./hooks/useAuth";
 import { useIsMobile } from "./hooks/use-mobile";
@@ -57,7 +56,6 @@ const AppLayout = () => {
             <Route path="/" element={<Dashboard />} />
             <Route path="/projects" element={<Projects />} />
             <Route path="/analytics" element={<Analytics />} />
-            <Route path="/reports" element={<Reports />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </div>

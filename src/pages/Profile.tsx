@@ -129,7 +129,7 @@ const Profile = () => {
                       ? profile.status.charAt(0).toUpperCase() + profile.status.slice(1)
                       : "N/A"}
                   </Badge>
-                  {timeLeft && (
+                  {profile?.status !== "active" && timeLeft && (
                     <Badge variant="outline" className="text-sm">
                       <Clock className="w-3 h-3 mr-1" />
                       {timeLeft}
@@ -276,7 +276,7 @@ const Profile = () => {
                         : "N/A"}
                     </Badge>
                   </div>
-                  {profile?.expiry_date && (
+                  {profile?.status !== "active" && profile?.expiry_date && (
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
                         Expiry Date
@@ -286,7 +286,7 @@ const Profile = () => {
                       </span>
                     </div>
                   )}
-                  {timeLeft && (
+                  {profile?.status !== "active" && timeLeft && (
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
                         Time Remaining
